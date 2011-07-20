@@ -20,28 +20,29 @@ our $variation 	: shared;	# variation 	=> maximum number of variations
 our $max_size 	: shared;	# max_size 	=> maximum size in bytes of http request default: 1MB
 our $max_threads: shared;	# max_threads 	=> maximum number of simultaneously active threads
 our $max_reqs	: shared;	# max_reqs 	=> crawler maximum number of requests
-our $try 	: shared;
-our $cont 	: shared;
-our $q 		: shared;
+our $try 	: shared;	#
+our $cont 	: shared;	#
+our $q 		: shared;	#
 our $rfi_return	: shared;	# rfi_return => return of the base64 string of the hosted file for inclusion 
-our $url 	: shared;
-our $c		: shared;
+our $url 	: shared;	#
+our $c		: shared;	#
 our $extensions : shared;	# extensions => contains all the extensions that the scanner will ignore
 our %files	: shared;	# hash with the found files
 our %forms 	: shared;	# hash with the found forms
 our @list 	: shared;	# arrray with the list of urls to exploit
 our %urls 	: shared;	# hash to check if a url has already been found (to avoid repetition)
-our $host 	: shared;
-our $u 		: shared;
-our $p 		: shared;
-our @strings 	: shared;
+our $host 	: shared;	#
+our $u 		: shared;	#
+our $p 		: shared;	#
+our @strings 	: shared;	#
+our $vulnerable : shared;	#
 our @threads;
 
 #############################
 #  CONFIGURATION
 #############################
 
-$version	= 1.0;
+$version	= 1.1;
 $variation	= 2;
 $timeout	= 10;
 $c		= 0;
@@ -51,6 +52,7 @@ $extensions 	= ".exe.pdf.xls.csv.mdb.rpm.deb.doc.jpg.jpeg.png.gif.bmp.tgz.gz.bz2
 $max_threads 	= 15;
 $max_reqs	= 15000;
 $max_size 	= 1048576;
+$vulnerable	= 0;
 
 @strings = (
 			'|cat%20/etc/passwd',
@@ -110,7 +112,6 @@ $| = 1;
 
 
 
-
 ################################
 # 	SCANNER FUNCTIONS
 ################################
@@ -121,7 +122,7 @@ $| = 1;
 sub main(){
 
 if(!$url || $url !~ /https?:\/\/.+\//){
-	print "Use: perl $0 http://www.example.com/\n\n";
+	printf("Use: perl %s http://www.example.com/\n\n", $0);
 	exit;
 }
 
@@ -134,14 +135,15 @@ $q->enqueue($url);
 threads->new(\&crawling, $q->dequeue);
 @threads = threads->list;
 $u++;
-while($q->pending() || scalar(@threads) ){
 
-                @threads = threads->list;
+while($q->pending() || scalar(@threads)){
+		@threads = threads->list;
                 if ($q->pending > 0) {
-                        if  ($#threads < $max_threads) {
+                        if  (scalar(@threads) < $max_threads-1) {
 				if($p <= $max_reqs){
-					print("\rCrawling: ". int(($p/$u)*100) ."% Urls: [$p - $u] \r");
+					printf("\rCrawling: %d% [%d - %d] Threads: %d \r", int(($p/$u)*100), $p, $u, scalar(threads->list));
 					threads->new(\&crawling, $q->dequeue);
+
 				}
 				else{
 					while($q->pending()){
@@ -150,39 +152,42 @@ while($q->pending() || scalar(@threads) ){
 				}
                        } else {
                                 foreach my $running (@threads) {
-                                        print("\rCrawling: ". int(($p/$u)*100) ."% Urls: [$p - $u] \r");
+					printf("\rCrawling: %d% [%d - %d] Threads: %d \r", int(($p/$u)*100), $p, $u, scalar(threads->list));
 					$running->join();
                                 }
                         }
                 } else {
-                        if ($#threads > 0) {
+			@threads = threads->list;
+                        if (scalar(@threads)) {
                                 foreach my $running (@threads) {
-					print("\rCrawling: ". int(($p/$u)*100) ."% Urls: [$p - $u] \r");
+					printf("\rCrawling: %d% [%d - %d] Threads: %d \r", int(($p/$u)*100), $p, $u, scalar(threads->list));
                                         $running->join();
                                 }
                         } 
                 }
-
+#@threads = threads->list;
 }
-
+@threads = threads->list;
 foreach my $running (@threads) {
-           $running->join();
+	printf("\rCrawling: %d% [%d - %d] Threads: %d \r", int(($p/$u)*100), $p, $u, scalar(threads->list));
+	$running->join();
 }
+
 
 # crawler end
 
-print "\nCrawling finished, " . scalar(@list) ." urls found\n";
+printf("Crawling finished, %d URL's found!    \n", scalar(@list));
 
 @list = &mix(@list); 		# include the strings to try explore possible vulnerability
 @list = &remove(@list); 	# remove duplicate tests
 
-print "Tests by GET method: " . scalar(@list) . "\n";
-print "Starting tests by GET method.\n";
+printf("GET method tests: %d\n",scalar(@list));
+printf("Starting GET method tests.\n");
 
 $p =0;
 $u = $#list;
 
-$q = new Thread::Queue;
+#$q = new Thread::Queue;
 
 #test each element of url list
 foreach my $teste (@list){
@@ -193,31 +198,38 @@ foreach my $teste (@list){
 while ($q->pending() || scalar(@threads)) {
                 @threads = threads->list;
                 if ($q->pending > 0) {
-                        if  ($#threads < $max_threads) {
-				print "\rThreads: ". $#threads . " [$cont - $try] \r";
+                        if  (scalar(@threads) < $max_threads-1) {
+				printf("\rThreads: %d [%d - %d] \r", scalar(threads->list), $cont, $try);
                                 threads->new(\&check_vul_get, $q->dequeue);
                                 $cont++;
                         } else {
                                 foreach my $running (@threads) {
-					print "\rThreads: ". $#threads . " [$cont - $try] \r";
-                                        $running->join();
+					printf("\rThreads: %d [%d - %d] \r", scalar(threads->list), $cont, $try);
+					$running->join();
                                 }
                         }
                 } else {
-                        if ($#threads > 0) {
+			@threads = threads->list;
+                        if (scalar(@threads)) {
                                 foreach my $running (@threads) {
-					print "\rThreads: ". $#threads . " [$cont - $try] \r";
+					printf("\rThreads: %d [%d - %d] \r", scalar(threads->list), $cont, $try);
                                         $running->join();
                                 }
                         } 
                 }
         }
 
+@threads = threads->list;
+foreach my $running (@threads) {
+	printf("\rThreads: %d [%d - %d] \r", scalar(threads->list), $cont, $try);
+	$running->join();
+}
 
-print "Tests by GET method finished\n";
-print "starting tests by POST method\n";
 
-$q = new Thread::Queue;
+printf("GET method tests finished.        \n");
+printf("starting POST method tests.\n");
+
+#$q = new Thread::Queue;
 $try = 0;
 $cont = 0;
 
@@ -233,32 +245,39 @@ foreach my $action (%forms)
 	} 
 }
 
-while ($q->pending() || scalar(@threads)) {
+while ($q->pending() || scalar(@threads)) { 
                 @threads = threads->list;
                 if ($q->pending > 0) {
-                        if  ($#threads < $max_threads) {
-				print "\rThreads: ". $#threads . " [$cont - $try] \r";
+                        if  (scalar(@threads) < $max_threads-1) {
+				printf("\rThreads: %d [%d - %d] \r", scalar(threads->list), $cont, $try);
                                 threads->new(\&check_vul_post, $q->dequeue);
-                                $cont++;
+                                
+				$cont++;
                         } else {
                                 foreach my $running (@threads) {
-					print "\rThreads: ". $#threads . " [$cont - $try] \r";
+					printf("\rThreads: %d [%d - %d] \r", scalar(threads->list), $cont, $try);
                                         $running->join();
                                 }
                         }
                 } else {
-                        if ($#threads > 0) {
+			@threads = threads->list;
+                        if (scalar(@threads)) {
                                 foreach my $running (@threads) {
-					print "\rThreads: ". $#threads . " [$cont - $try] \r";
+					printf("\rThreads: %d [%d - %d] \r", scalar(threads->list), $cont, $try);
                                         $running->join();
                                 }
                         } 
                 }
         }
 
+@threads = threads->list;
+foreach my $running (@threads) {
+	printf("\rThreads: %d [%d - %d] \r", scalar(threads->list), $cont, $try);
+	$running->join();
+}
 
-print "Tests by POST method finished\n";
-print "\nScanning finished\n";
+printf("\nPOST method tests finished.\n");
+printf("Scanning finished. [%d] vulnerabilities found.\n", $vulnerable);
 }
 
 sub crawling(){
@@ -273,7 +292,7 @@ sub crawling(){
 			$urls{$t} = 1;
 		}
 	}
-	print("\rCrawling: ". int(($p/$u)*100) ."% Urls: [$p - $u] \r");
+	printf("\rCrawling: %d% [$p - $u] Threads: %d \r", int(($p/$u)*100), scalar(threads->list));
 
 }
 
@@ -282,7 +301,8 @@ sub check_vul_get(){
 	my $url1 = shift;
 	my $res = &get_http($url1);
 	if(($res =~/root:x:0:0:root/) || ($res =~/$rfi_return/)){
-		print "Vul: $url1\n";
+		$vulnerable++;
+		printf("[%d] Vul: %s\n",$vulnerable, $url1);
 		&grava("Vuls.txt", $url1);
 	}
 }
@@ -292,8 +312,9 @@ sub check_vul_post(){
 	my ($action, $data)  = split('#', shift);
 	my $res	   = &post_http($action, $data);
 	if(($res =~/root:x:0:0:root/) || ($res =~/$rfi_return/)){
-		print "Vul: $action\n$data\n";
-		&grava("Vuls.txt", ($action, $data));
+		$vulnerable++;
+		printf("[%d] Vul: %s\nPOST data: %s\n",$vulnerable, $action, $data);
+		&grava("Vuls.txt", ($action, "POST data: " .$data));
 	}
 }
 
@@ -336,8 +357,10 @@ sub add_form(){
 	if(length($form[0]) <1){
 		$form[0] = &get_file($site);
 	}
+
 	$content =~/<form.*method=\"(.*?)\".*>/i;
 	$form[1] = $1;	
+
 	if($form[1] =~/get/i){
 		if($form[0] !~ /^https?:\/\//){
 			
@@ -375,6 +398,7 @@ sub add_form(){
 		if(!$forms{$form[0]}){
 			$forms{$form[0]} = $data;
 		}
+
 	}
 }
 
@@ -476,7 +500,7 @@ sub get_urls()
 
 
 sub banner(){
-	printf("###############################\n# Uniscan by poerschke        #\n###############################\nV. %.2f\n\n", $version);
+	printf("###############################\n# Uniscan by poerschke        #\n###############################\nV. %.1f\n\n", $version);
 }
 
 sub host(){
