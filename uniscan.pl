@@ -31,7 +31,6 @@ our %files	: shared;	# hash with the found files
 our %forms 	: shared;	# hash with the found forms
 our @list 	: shared;	# arrray with the list of urls to exploit
 our %urls 	: shared;	# hash to check if a url has already been found (to avoid repetition)
-our $host 	: shared;	#
 our $u 		: shared;	#
 our $p 		: shared;	#
 our @strings 	: shared;	#
@@ -42,7 +41,7 @@ our @threads;
 #  CONFIGURATION
 #############################
 
-$version	= 1.1;
+$version	= 1.2;
 $variation	= 2;
 $timeout	= 10;
 $c		= 0;
@@ -126,7 +125,7 @@ if(!$url || $url !~ /https?:\/\/.+\//){
 	exit;
 }
 
-$host = &host($url);
+
 
 # crawler start
 $q = new Thread::Queue;
@@ -165,14 +164,8 @@ while($q->pending() || scalar(@threads)){
                                 }
                         } 
                 }
-#@threads = threads->list;
-}
-@threads = threads->list;
-foreach my $running (@threads) {
-	printf("\rCrawling: %d% [%d - %d] Threads: %d \r", int(($p/$u)*100), $p, $u, scalar(threads->list));
-	$running->join();
-}
 
+}
 
 # crawler end
 
@@ -276,16 +269,17 @@ foreach my $running (@threads) {
 	$running->join();
 }
 
-printf("\nPOST method tests finished.\n");
+printf("POST method tests finished.    \n");
 printf("Scanning finished. [%d] vulnerabilities found.\n", $vulnerable);
 }
 
 sub crawling(){
 	my $l = shift;
+	
 	my @tmp = &get_urls($l);
 	$p++;
 	foreach my $t (@tmp){
-		if((!$urls{$t}) && $t =~/^https?:\/\/[a-z\.\d]*$host\//){
+		if(!$urls{$t}){
 			push(@list, $t);
 			$q->enqueue($t);
 			$u++;
@@ -293,7 +287,6 @@ sub crawling(){
 		}
 	}
 	printf("\rCrawling: %d% [$p - $u] Threads: %d \r", int(($p/$u)*100), scalar(threads->list));
-
 }
 
 
@@ -350,7 +343,6 @@ sub add_form(){
 	my $content = $_[1];
 	my @form = ();
 	my $url2;
-	my $host = &host($site);
 	my @inputs = &get_input($content);
 	$content =~/<form.*action=\"(.*?)\".*>/i;
 	$form[0] = $1;
@@ -381,7 +373,7 @@ sub add_form(){
 		if($extensions !~/$ext/){
 			$files{$fil}++;
 			if($files{$fil} <= $variation){
-				if($url2 =~/^https?:\/\/[a-z\.\d]*$host\//){
+				if($url2 =~/$url/){
 					push(@list, $url2);
 				}
 			}
@@ -447,15 +439,14 @@ sub get_urls()
 {
     	my $base = shift;
     	my @lst = ();
-	my @ERs = (	"<a.*href=\"(.+)\".*>", 
-			"<a.*href='(.+)'.*>", 
+	my @ERs = (	"href=\"(.+)\"", 
+			"href='(.+)'", 
 			"location.href='(.+)'", 
 			"location.href=\"(.+)\"", 
 			"<meta.*content=\"?.*;URL=(.+)\"?.*?>"
 		);
 				
     	my $result = &get_http($base);
-	my $host = &host($base);
 	if($result =~ /<form/i){
 		&add_form($base, $result);
 	}
@@ -472,7 +463,7 @@ sub get_urls()
 					$link = substr($link,0,index($link, "'"));
 				}
 				
-				if($link !~/^https?:\/\// && $link !~/https?:\/\// && $link !~/:/){
+				if($link !~/^http:\/\// && $link !~/http:\/\// && $link !~/:/){
 					if($link =~/^\//){
 						substr($link,0,1) = "";
 					}
@@ -481,7 +472,7 @@ sub get_urls()
 				chomp $link;
 				$link =~s/&amp;/&/g;
 		 
-				if($link =~/^https?:\/\// && $link =~/^https?:\/\/[a-z\.\d]*$host\// && $link !~/#|javascript:|mailto:/){
+				if($link =~/^https?:\/\// && $link =~/^$url/ && $link !~/#|javascript:|mailto:/){
 					my $fil = &get_file($link);
 					my $ext = &get_extension($fil);
 					if($extensions !~/$ext/){
