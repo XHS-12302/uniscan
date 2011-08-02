@@ -56,7 +56,7 @@ our $pid;
 # DEFAULT CONFIGURATION
 #############################
 
-$version	= 3.0;
+$version	= 3.1;
 $variation	= 2;
 $timeout	= 10;
 $rfi_return 	= "unipampascanunipampa"; 
@@ -155,8 +155,12 @@ if($args{b}){
 ###########################
 
 @sql = (
+	'%27',
+	'%3b',
+	'%22',
 	"'",
-	"\"",
+	";",
+	"\""
 	);
 
 
@@ -379,12 +383,6 @@ $cont = 0;
 foreach my $action (%forms)
 {
 	my $data = $forms{$action};
-	foreach my $teste (@xss){
-		my $temp = $data;
-		$temp =~ s/123/$teste/g;
-		$q->enqueue("$action#$temp"); 
-		$try++;
-	} 
 
 	foreach my $teste (@sql){
 		my $temp = $data;
@@ -392,6 +390,14 @@ foreach my $action (%forms)
 		$q->enqueue("$action#$temp"); 
 		$try++;
 	} 
+
+	foreach my $teste (@xss){
+		my $temp = $data;
+		$temp =~ s/123/$teste/g;
+		$q->enqueue("$action#$temp"); 
+		$try++;
+	} 
+
 
 	foreach my $teste (@rfi){
 		my $temp = $data;
@@ -619,6 +625,13 @@ sub mix(){
 					$temp =~ s/$variables[$x]/$t/g;
 					push(@list2, $temp);
 				}
+				foreach my $str (@xss){
+					$temp = $line;
+					my $t = $var_temp . $str;
+					$temp =~ s/$variables[$x]/$t/g;
+					push(@list2, $temp);
+				}
+
 			}
 		}
 	}
