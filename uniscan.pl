@@ -18,6 +18,7 @@ use Thread::Queue;
 use URI;
 use Getopt::Std;
 
+
 our $version;
 our $timeout 	: shared;	# timeout 	=> time(in seconds)
 our $variation 	: shared;	# variation 	=> maximum number of variations
@@ -56,12 +57,12 @@ our $pid;
 # DEFAULT CONFIGURATION
 #############################
 
-$version	= 3.1;
+$version	= 3.2;
 $variation	= 2;
-$timeout	= 10;
+$timeout	= 15;
 $rfi_return 	= "unipampascanunipampa"; 
 $extensions 	= ".exe.pdf.xls.csv.mdb.rpm.deb.doc.jpg.jpeg.png.gif.bmp.tgz.gz.bz2.zip.rar.tar.asf.avi.bin.dll.fla.mp3.mpg.mov.ogg.ppt.rtf.scr.wav.msi";
-$max_threads 	= 15;
+$max_threads 	= 10;
 $max_reqs	= 15000;
 $max_size 	= 1048576;
 $output		= "Vuls.txt";
@@ -144,9 +145,7 @@ if($args{b}){
 
 @xss = (
 	"<SCRIPT>alert('XSS')</SCRIPT>",
-	"><SCRIPT>alert('XSS')</SCRIPT>",
-	"\"><SCRIPT>alert('XSS')</SCRIPT>",
-	"'><SCRIPT>alert('XSS')</SCRIPT>"
+	"\"><SCRIPT>alert('XSS')</SCRIPT>"
 );
 
 
@@ -285,7 +284,14 @@ $cont		= 0;
 
 
 printf("\nScanning $url\n");
-
+&write($output, "###############################");
+&write($output, "# Uniscan project             #");
+&write($output, "# http://www.uniscan.com.br/  #");
+&write($output, "###############################");
+&write($output, "V.$version");
+&write($output, "Scan of url: $url");
+&write($output, "Scan start date: " . &date());
+&write($output, "");
 # crawler start
 $q = new Thread::Queue;
 $q->enqueue($url);
@@ -326,11 +332,12 @@ while($q->pending() || scalar(@threads)){
 # crawler end
 sleep(10);
 printf("Crawling finished, %d URL's found!    \n", scalar(@list));
-
+&write($output, "Crawler found ".scalar(@list)." URL's!");
 @list = &mix(@list); 		# include the strings to try explore possible vulnerability
 @list = &remove(@list); 	# remove duplicate tests
 
 printf("GET method tests: %d\n",scalar(@list));
+
 printf("Starting GET method tests.\n");
 
 $p =0;
@@ -380,46 +387,47 @@ $try = 0;
 $cont = 0;
 
 #test each found forms
+
 foreach my $action (%forms)
 {
+
 	my $data = $forms{$action};
+	if (length($data) > 2){
+		foreach my $teste (@sql){
+			my $temp = $data;
+			$temp =~ s/123/$teste/g;
+			$q->enqueue("$action#$temp"); 
+			$try++;
+		} 
 
-	foreach my $teste (@sql){
-		my $temp = $data;
-		$temp =~ s/123/$teste/g;
-		$q->enqueue("$action#$temp"); 
-		$try++;
-	} 
+		foreach my $teste (@xss){
+			my $temp = $data;
+			$temp =~ s/123/$teste/g;
+			$q->enqueue("$action#$temp"); 
+			$try++;
+		} 
 
-	foreach my $teste (@xss){
-		my $temp = $data;
-		$temp =~ s/123/$teste/g;
-		$q->enqueue("$action#$temp"); 
-		$try++;
-	} 
+		foreach my $teste (@rfi){
+			my $temp = $data;
+			$temp =~ s/123/$teste/g;
+			$q->enqueue("$action#$temp"); 
+			$try++;
+		} 
 
+		foreach my $teste (@lfi){
+			my $temp = $data;
+			$temp =~ s/123/$teste/g;
+			$q->enqueue("$action#$temp"); 
+			$try++;
+		} 
 
-	foreach my $teste (@rfi){
-		my $temp = $data;
-		$temp =~ s/123/$teste/g;
-		$q->enqueue("$action#$temp"); 
-		$try++;
-	} 
-
-	foreach my $teste (@lfi){
-		my $temp = $data;
-		$temp =~ s/123/$teste/g;
-		$q->enqueue("$action#$temp"); 
-		$try++;
-	} 
-
-	foreach my $teste (@rce){
-		my $temp = $data;
-		$temp =~ s/123/$teste/g;
-		$q->enqueue("$action#$temp"); 
-		$try++;
-	} 
-
+		foreach my $teste (@rce){
+			my $temp = $data;
+			$temp =~ s/123/$teste/g;
+			$q->enqueue("$action#$temp"); 
+			$try++;
+		} 
+	}
 }
 
 while ($q->pending() || scalar(@threads)) { 
@@ -454,6 +462,9 @@ foreach my $running (@threads) {
 
 printf("POST method tests finished.    \n");
 printf("Scanning finished. [%d] vulnerabilities found.\n", $vulnerable);
+&write($output, "Scanning finished. [$vulnerable] vulnerabilities found.");
+&write($output, "Scan end date: ". &date());
+&write($output, "");
 }
 
 
@@ -498,34 +509,36 @@ sub check_vul_get(){
 		$vulnerable++;
 		printf("[%d] [LFI] Vul: %s\n",$vulnerable, $url1) if($url1 =~/%2e|..\// && $url1 !~/cat%20\/etc\/passwd|'|"/);
 		printf("[%d] [RCE] Vul: %s\n",$vulnerable, $url1) if($url1 =~/cat%20\/etc\/passwd/);
-		&write($output, $url1);
+		&write($output, "[".$vulnerable."] [LFI] vul: ".$url1) if($url1 =~/%2e|..\// && $url1 !~/cat%20\/etc\/passwd|'|"/);
+		&write($output, "[".$vulnerable."] [RCE] vul: ".$url1) if($url1 =~/cat%20\/etc\/passwd/);
 	}
 	
 	if($res =~/boot loader/ && $res =~/operating systems/ && $res =~/WINDOWS/){
 		$vulnerable++;
 		printf("[%d] [LFI] vul: %s", $vulnerable, $url1) if($url1 !~/type%20/ && $url1 =~/boot.ini/);
 		printf("[%d] [RCE] vul: %s", $vulnerable, $url1) if($url1 =~/type%20/ && $url1 =~/boot.ini/);
-		&write($output, $url1);
+		&write($output, "[".$vulnerable."] [LFI] vul: ".$url1) if($url1 !~/type%20/ && $url1 =~/boot.ini/);
+		&write($output, "[".$vulnerable."] [RCE] vul: ".$url1) if($url1 =~/type%20/ && $url1 =~/boot.ini/);
 	}
-	#check FRI vuln
+	#check RFI vuln
 	if($res =~/$rfi_return/){
 		$vulnerable++;
 		printf("[%d] [RFI] Vul: %s\n",$vulnerable, $url1);
-		&write($output, $url1);
+		&write($output, "[".$vulnerable."] [RFI] vul: ".$url1);
 	}
 
 	#check SQL-i Vuln
 	if(($res =~/You have an error in your SQL syntax/ || $res =~/Microsoft OLE DB Provider for ODBC Drivers error/ || $res =~/Supplied argument is not a valid .* result/ || $res =~/Unclosed quotation mark after the character string/) && $url1 =~/'|"/ && $url1 !~/etc\/passwd|<SCRIPT>|boot.ini/){
 		$vulnerable++;
 		printf("[%d] [SQL-i] Vul: %s\n",$vulnerable, $url1);
-		&write($output, $url1);
+		&write($output, "[".$vulnerable."] [SQL-i] vul: ".$url1)
 	}
 
 	#check XSS
 	if(($res =~/<SCRIPT>alert\('XSS'\)<\/SCRIPT>/) && $url1 =~/<SCRIPT>/){
 		$vulnerable++;
-		printf("[%d] [XSS] Vul: %s\n\n",$vulnerable, $url1);
-		&write($output, $url1);
+		printf("[%d] [XSS] Vul: %s\n",$vulnerable, $url1);
+		&write($output, "[".$vulnerable."] [XSS] vul: ".$url1)
 	}
 }
 
@@ -547,33 +560,35 @@ sub check_vul_post(){
 		$vulnerable++;
 		printf("[%d] [LFI] Vul: %s\nData: %s\n\n",$vulnerable, $action, $data) if($data =~/%2e|..\// && $data !~/cat%20\/etc\/passwd/);
 		printf("[%d] [RCE] Vul: %s\nData: %s\n\n",$vulnerable, $action, $data) if($data =~/cat%20\/etc\/passwd/);
-		&write($output, ($action, "POST DATA: " .$data));
+		&write($output, ("[$vulnerable] [LFI] vul:  $action", "POST DATA: " .$data)) if($data =~/%2e|..\// && $data !~/cat%20\/etc\/passwd/);
+		&write($output, ("[$vulnerable] [RCE] vul:  $action", "POST DATA: " .$data)) if($data =~/cat%20\/etc\/passwd/);
 	}
 	
 	if($res =~/boot loader/ && $res =~/operating systems/ && $res =~/WINDOWS/){
 		$vulnerable++;
 		printf("[%d] [LFI] vul: %s\nData: %s", $vulnerable, $action, $data) if($data !~/type%20/ && $data =~/boot.ini/);
 		printf("[%d] [RCE] vul: %s\nData: %s", $vulnerable, $action, $data) if($data =~/type%20/ && $data =~/boot.ini/);
-		&write($output, ($action, "POST DATA: " .$data));
+		&write($output, ("[$vulnerable] [LFI] vul:  $action", "POST DATA: $data")) if($data !~/type%20/ && $data =~/boot.ini/);
+		&write($output, ("[$vulnerable] [RCE] vul:  $action", "POST DATA: $data")) if($data =~/type%20/ && $data =~/boot.ini/);
 	 }
 
 	if($res =~/$rfi_return/){
 		$vulnerable++;
 		printf("[%d] [RFI] Vul: %s\nData: %s\n\n",$vulnerable, $action, $data);
-		&write($output, ($action, "POST DATA: " .$data));
+		&write($output, ("[$vulnerable] [RFI] vul:  $action", "POST DATA: $data"));
 	}
 
 	if(($res =~/You have an error in your SQL syntax/ || $res =~/Microsoft OLE DB Provider for ODBC Drivers error/ || $res =~/Supplied argument is not a valid .* result/ || $res =~/Unclosed quotation mark after the character string/) && $data =~/'|"/ && $data !~/etc\/passwd|<SCRIPT>|boot.ini/){
 		$vulnerable++;
 		printf("[%d] [SQL-i] Vul: %s\nData: %s\n\n",$vulnerable, $action, $data);
-		&write($output, ($action, "POST DATA: " .$data));
+		&write($output, ("[$vulnerable] [SQL-i] vul:  $action", "POST DATA: $data"));
 	}
 
 	#check XSS
 	if(($res =~/<SCRIPT>alert\('XSS'\)<\/SCRIPT>/) && $data =~/<SCRIPT>/){
 		$vulnerable++;
 		printf("[%d] [XSS] Vul: %s\nData: %s\n\n",$vulnerable, $action, $data);
-		&write($output, ($action, "POST DATA: " .$data));
+		&write($output, ("[$vulnerable] [XSS] vul:  $action", "POST DATA: $data"));
 	}
 
 }
@@ -657,13 +672,13 @@ sub add_form(){
 	my @form = ();
 	my $url2;
 	my @inputs = &get_input($content);
-	$content =~/<form.*action=\"(.*?)\".*>/i;
+	$content =~/<form.*action=\"(.+)\".*>/i;
 	$form[0] = $1;
 	if(length($form[0]) <1){
 		$form[0] = &get_file($site);
 	}
 
-	$content =~/<form.*method=\"(.*?)\".*>/i;
+	$content =~/<form.*method=\"(.+)\".*>/i;
 	$form[1] = $1;	
 
 	if($form[1] =~/get/i){
@@ -721,10 +736,10 @@ sub add_form(){
 sub get_input(){
 	my $content = shift;
 	my @input = ();
-	while ($content =~  m/<input.*name=\"(.+?)\".*>/gi){
+	while ($content =~  m/<input.*name=\"(.+)\".*>/gi){
 		push(@input, $1);
 	}
-	while ($content =~  m/<input.*name=\'(.+?)\'.*>/gi){
+	while ($content =~  m/<input.*name=\'(.+)\'.*>/gi){
 		push(@input, $1);
 	}
 	return @input;
@@ -760,7 +775,6 @@ sub get_http(){
     	$ua->timeout($timeout);
 	$ua->max_size($max_size);
 	if($proxy && $proxy_port){
-		print "proxy\n";
 		$ua->proxy(['http'], 'http://'. $proxy . ':' . $proxy_port . '/');
 	}
 
@@ -833,7 +847,7 @@ sub get_urls()
 		);
 				
     	my $result = &get_http($base);
-	if($result =~ /<form/i){
+	if($result =~ /<form .*action>/i){
 		&add_form($base, $result);
 	}
     	if($result){
@@ -1067,4 +1081,21 @@ sub background{
 	$pid = fork;
 	exit if $pid;
 	die "Fork problem: $!\n" unless defined($pid);
+}
+
+
+##############################################
+# Function date
+# This function return local date
+#
+#
+# Param: nothing
+# Return: $date
+##############################################
+
+sub date{
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
+	$year += 1900;
+	$mon++;
+	return "$mday-$mon-$year $hour:$min:$sec";
 }
