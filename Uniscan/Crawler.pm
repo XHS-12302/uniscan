@@ -141,7 +141,7 @@ sub add_form(){
 				if($conf{'extensions'} !~/$ext/){
 					$files{$fil}++;
 					if($files{$fil} <= $conf{'variation'}){
-						push(@list, $url2);
+						push(@list, $url2) if($url2 !~/\s|"|'|:/);
 					}
 				}
 			}
@@ -152,8 +152,8 @@ sub add_form(){
 				}
 				if(!$forms{$action}){
 					if($data){
-						$forms{$action} = $data;
-						$q->enqueue($action."#".$data);
+						$forms{$action} = $data  if($action !~/\s|"|'|:/);
+						$q->enqueue($action."#".$data) if($action !~/\s|"|'|:/);
 					}
 				}
 			}

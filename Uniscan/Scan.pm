@@ -730,7 +730,6 @@ sub threadnize(){
                         if  (scalar(@threads) <= $conf{'max_threads'}-1) {
 				threads->new(\&{$fun}, $q->dequeue);
 				$x++;
-				print "| [$x - $to]";
 			}
 			else {
                                 foreach my $running (@threads) {
