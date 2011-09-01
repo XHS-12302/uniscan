@@ -13,9 +13,10 @@ our %files	: shared = ( );
 our @list	: shared = ( );
 our %forms	: shared = ( );
 our %urls	: shared = ( );
-our $q		: shared = ( );
+our $q :shared = new Thread::Queue;
 our $p		: shared = 0;
 our $u		: shared = 0;
+our $reqs	: shared = 0;
 our $url;
 our @url_list = ( );
 our $func = Uniscan::Functions->new();
@@ -181,6 +182,7 @@ sub get_urls()
 		my @lst = ();
 		my @ERs = (	"href=\"(.+)\"", 
 				"href='(.+)'", 
+				"href=(.+?)>", 
 				"location.href='(.+)'",
 				"src='(.+)'",
 				"src=\"(.+)\"",
@@ -274,8 +276,11 @@ sub get_urls()
 							$files{$fil}++;
 							if($files{$fil} <= $conf{'variation'}){
 								push (@lst,$link);
+								
 							}
+							
 						}
+						
 					}
 				}
 			}
@@ -293,19 +298,22 @@ sub get_urls()
 ##############################################
 
 sub crawling(){
-    	my $l = shift;
-	my @tmp = &get_urls($l);
+	
+	while($q->pending() && $reqs <= $conf{'max_reqs'}){
+		$reqs++;
+		my $l = $q->dequeue;
+		my @tmp = &get_urls($l);
 
-	foreach my $t (@tmp){
-		if(!$urls{$t}){
-			push(@list, $t);
-			$q->enqueue($t);
-			$u++;
-			$urls{$t} = 1;
+		foreach my $t (@tmp){
+			if(!$urls{$t}){
+				push(@list, $t);
+				$q->enqueue($t);
+				$u++;
+				$urls{$t} = 1;
+			}
 		}
+		printf("\r| [*] Crawling: [%d - %d]\r", $reqs, $u);
 	}
-
-	printf("\r| [*] Crawling: [%d - %d]\r", $p, $u);
 }
 
 
@@ -321,55 +329,37 @@ sub crawling(){
 
 
 sub start(){
-my $self = shift;
-$q = new Thread::Queue;
-foreach (@url_list){
-$q->enqueue($_);
-}
-$u = scalar(@url_list);
-$url = $url_list[0];
-$func->write("| Crawler Started:");
-$p++;
-threads->new(\&crawling, $q->dequeue);
-my @threads = threads->list;
+	my $self = shift;
+	$q = new Thread::Queue;
+	$reqs = 0;
+	foreach my $ur (@url_list){
+		$q->enqueue($ur);
+	}
+	$u = scalar(@url_list);
+	$url = $url_list[0];
+	$func->write("| Crawler Started:");
+
+	my $x =0 ;
+	while($q->pending() && $x < $conf{'max_threads'}){
+		$x++;
+		threads->new(\&crawling);
+		sleep($conf{'timeout'}) if($q->pending() == 0 && $x <$conf{'max_threads'});       
+	}
 
 
-while($q->pending() || scalar(@threads)){
-		@threads = threads->list;
-                if ($q->pending > 0) {
-                        if  (scalar(@threads) < $conf{'max_threads'}) {
-				if($p <= $conf{'max_reqs'}){
-					$p++;
-					printf("\r| [*] Crawling: [%d - %d]\r", $p, $u);
-					threads->new(\&crawling, $q->dequeue);
-				}
-				else{
-					while($q->pending()){
-						$q->dequeue;
-					}
-				}
-                       } else {
-                                foreach my $running (@threads) {
-					$running->join();
-                                }
-                        }
-                } else {
-			@threads = threads->list;
-                        if (scalar(@threads)) {
-                                foreach my $running (@threads) {
-                                        $running->join();
-                                }
-                        } 
-                }
-
-}
-# crawler end
-@threads = threads->list;
+	my @threads = threads->list();
         foreach my $running (@threads) {
-              $running->join();
+		$running->join();
         }
-$func->write("| [+] Crawling finished, ". scalar(@list) ." URL's found!");
-return @list;
+
+	while($q->pending()){
+		$q->dequeue;
+	}
+	
+# crawler end
+
+	$func->write("| [+] Crawling finished, ". scalar(@list) ." URL's found!");
+	return @list;
 }
 
 

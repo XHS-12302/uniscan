@@ -17,7 +17,7 @@ our $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
 %conf = $cfg->loadconf();
 our $pattern;
 our @list : shared = ( );
-
+our $q :shared = new Thread::Queue;
 
 ##############################################
 #  Function GetServerInfo
@@ -77,41 +77,23 @@ sub Check(){
 	my @directory = <$file>;
 	close($file);
 	
-	our $q :shared = new Thread::Queue;
+	
 	foreach my $dir (@directory){
 		chomp($dir);
 		$q->enqueue($url.$dir);
 	}
 
-	threads->new(\&GetResponse, $q->dequeue);
-	our @threads = threads->list;
+	our @threads = threads->list();
         our $code : shared = 0;
 	our $ur   : shared = 0;
-	while($q->pending() || scalar(@threads)){
-		@threads = threads->list;
-                if ($q->pending > 0) {
-                        if  (scalar(@threads) < $conf{'max_threads'} -1) {
-					threads->new(\&GetResponse, $q->dequeue);
-			}
-			else {
-                                foreach my $running (@threads) {
-					$running->join;
-										
-                                }
-                        }
-                } else {
-			@threads = threads->list;
-                        if (scalar(@threads)) {
-                                foreach my $running (@threads) {
-                                        $running->join();
-                                       
-                                }
-                        } 
-                }
+	my $x =0;
 
+	while($q->pending() && $x <  $conf{'max_threads'}){
+		$x++;
+		threads->new(\&GetResponse);
 	}
 
-	@threads = threads->list;
+	@threads = threads->list();
         foreach my $running (@threads) {
 		$running->join();
         }
@@ -131,53 +113,63 @@ return @list;
 
 
 sub GetResponse(){
-        my $url1 = shift;
-	my $ch = "";
-	if(length($url1) > 82){
-	    $ch = substr($url1, 0, 79) . "...\r";
-	}
-	else{
-	    $ch = $url1 . " "x(82 - length($url1)) . "\r";
-	}
-	print "| [*] Checking: $ch";
-	if($url1 =~/^https:\/\//){
-        	my $http = Uniscan::Http->new();
-		my $response = $http->GETS($url1);
-		if($response){
-			if($response =~ $conf{'code'} && $pattern !~ m/$response->content/){
-				push(@list, $url1);
-				if(length($url1) < 99){
-					&write('', "| [+] CODE: " .$response."\t URL: $url1" . " "x(99 - length($url1)));
-				}
-				else {
-					&write('', "| [+] CODE: " .$response."\t URL: $url1");
+	
+	while($q->pending()){
+		my $url1 = $q->dequeue;
+		my $ch = "";
+		if(length($url1) > 82){
+		    $ch = substr($url1, 0, 79) . "...\r";
+		}
+		else{
+			$ch = $url1 . " "x(82 - length($url1)) . "\r";
+		}
+		print "| [*] Checking: $ch\r";
+		$ch = "";
+		if($url1 =~/^https:\/\//){
+			my $http = Uniscan::Http->new();
+			my $response = $http->GETS($url1);
+			if($response){
+				if($response =~ $conf{'code'} && $pattern !~ m/$response->content/){
+					push(@list, $url1);
+					if(length($url1) < 99){
+						&write('', "| [+] CODE: " .$response."\t URL: $url1" . " "x(99 - length($url1)));
+					}
+					else {
+						&write('', "| [+] CODE: " .$response."\t URL: $url1");
+					}
 				}
 			}
-		}
-        }
-
-	else{
-		my $req=HTTP::Request->new(GET=>$url1);
-		my $ua=LWP::UserAgent->new(agent => "Uniscan ".$conf{'version'}." http://www.uniscan.com.br/");
-		$ua->timeout($conf{'timeout'});
-		$ua->max_size($conf{'max_size'});
-		$ua->max_redirect(0);
-		$ua->protocols_allowed( [ 'http'] );
-		if($conf{'proxy'} ne "0.0.0.0" && $conf{'proxy_port'} != 65000){
-			$ua->proxy(['http'], 'http://'. $conf{'proxy'} . ':' . $conf{'proxy_port'} . '/');
+			$http = 0;
+			$response = 0;
+			
 		}
 
-		my $response=$ua->request($req);
-		if($response){
-			if($response->code =~ $conf{'code'} && $pattern !~ m/$response->content/){
-				push(@list, $url1);
-				if(length($url1) < 99){
-					&write('', "| [+] CODE: " .$response->code."\t URL: $url1" . " "x(99 - length($url1)));
-				}
-				else {
-					&write('', "| [+] CODE: " .$response->code."\t URL: $url1");
+		else{
+			my $req=HTTP::Request->new(GET=>$url1);
+			my $ua=LWP::UserAgent->new(agent => "Uniscan ".$conf{'version'}." http://www.uniscan.com.br/");
+			$ua->timeout($conf{'timeout'});
+			$ua->max_size($conf{'max_size'});
+			$ua->max_redirect(0);
+			$ua->protocols_allowed( [ 'http'] );
+			if($conf{'proxy'} ne "0.0.0.0" && $conf{'proxy_port'} != 65000){
+				$ua->proxy(['http'], 'http://'. $conf{'proxy'} . ':' . $conf{'proxy_port'} . '/');
+			}
+
+			my $response=$ua->request($req);
+			if($response){
+				if($response->code =~ $conf{'code'} && $pattern !~ m/$response->content/){
+					push(@list, $url1);
+					if(length($url1) < 99){
+						&write('', "| [+] CODE: " .$response->code."\t URL: $url1" . " "x(99 - length($url1)));
+					}
+					else {
+						&write('', "| [+] CODE: " .$response->code."\t URL: $url1");
+					}
 				}
 			}
+			$req = 0;
+			$ua = 0;
+			$response = 0;
 		}
 	}
 }
@@ -405,6 +397,35 @@ sub date{
 	$mon++;
 	return "$mday-$mon-$year $hour:$min:$sec";
 }
+
+
+sub CheckUpdate(){
+	my $self = shift;
+	my $h = Uniscan::Http->new();
+	my $response = $h->GET("http://www.uniscan.com.br/version.txt");
+	chomp $response;
+	if($response != $conf{'version'}){
+		&write("self", "New version $response is avaliable");
+		&write("self", "More details in http://www.uniscan.com.br/\n\n");
+	}
+
+}
+
+
+sub DoLogin(){
+	my $self = shift();
+	if($conf{'use_cookie_auth'} == 1){
+		my $h = Uniscan::Http->new();
+		my $resp = 0;
+		$resp = $h->GET($conf{'url_cookie_auth'});
+		$conf{'input_cookie_login'} =~s/"//g;
+		
+		$resp = $h->POST($conf{'url_cookie_auth'}, $conf{'input_cookie_login'}) if($conf{'method_cookie_login'} eq "POST");
+		$resp = $h->GET($conf{'url_cookie_auth'}.'?'.$conf{'input_cookie_login'}) if($conf{'method_cookie_login'} eq "GET");
+
+	}
+}
+
 
 1;
 

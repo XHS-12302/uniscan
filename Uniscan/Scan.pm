@@ -10,6 +10,8 @@ our $c = Uniscan::Configure->new(conffile => "uniscan.conf");
 %conf = $c->loadconf();
 our $vulnerable :shared = 0;
 our $func = Uniscan::Functions->new();
+our $q :shared = 0;
+our $http = Uniscan::Http->new();
 
 our @RFI = (
 		'http://www.uniscan.com.br/c.txt?',
@@ -205,12 +207,14 @@ sub CheckBackupFiles(){
 			
 		}
 	}
+	%bkp = ();
 	@files = ();
 	open(my $f, ">>temp.txt") or die "$!\n";
 	foreach my $file (@file){      
 	      print $f "$file\n";
 	}
 	close($f);
+	@file= ();
 	$func->write("| Checking for backup files:");
 	$func->Check($url, "temp.txt");
 	open($f, ">temp.txt");
@@ -418,22 +422,29 @@ sub ScanSQLCrawlerPost(){
 ##############################################
 
 sub TestRFI(){
-	my $test = shift;
-	my $t = $test;
-	if(length($t) >70){
-		$t = substr($t, 0, 70);
-		$t .= "...";
-	}
-	else{
-		$t .= " "x(99 - length($t)); 
-	}
-	print "[*] Checking: $t\r";
-	my $http = Uniscan::Http->new();
-		my $resp = $http->GET($test);
+
+my ($resp, $test) = 0;
+
+	while($q->pending){
+		$test = $q->dequeue;
+		my $t = $test;
+
+		if(length($t) >70){
+			$t = substr($t, 0, 70);
+			$t .= "...";
+		}
+		else{
+			$t .= " "x(99 - length($t)); 
+		}
+		print "[*] Checking: $t\r";
+		
+		$resp = $http->GET($test);
 		if($resp =~/$conf{'rfi_return'}/){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [RFI] $test");
 		}
+		$resp = 0;
+	}
 }
 
 
@@ -447,23 +458,27 @@ sub TestRFI(){
 ##############################################
 
 sub TestRFIPost(){
-	my $test = shift;
-	my ($url, $data) = split('#', $test);
-	my $t = $url;
-	if(length($t) >70){
-		$t = substr($t, 0, 70);
-		$t .= "...";
-	}
-	else{
-		$t .= " "x(99 - length($t)); 
-	}
-	print "[*] Checking: $t\r";
-	my $http = Uniscan::Http->new();
-		my $resp = $http->POST($url, $data);
+
+my ($resp, $test) = 0;
+	while($q->pending){
+		$test = $q->dequeue;
+		my ($url, $data) = split('#', $test);
+		my $t = $url;
+		if(length($t) >70){
+			$t = substr($t, 0, 70);
+			$t .= "...";
+		}
+		else{
+			$t .= " "x(99 - length($t)); 
+		}
+		print "[*] Checking: $t\r";
+		$resp = $http->POST($url, $data);
 		if($resp =~/$conf{'rfi_return'}/){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [RFI] $url\n| Post data: $data");
 		}
+		$resp = 0;
+	}
 }
 
 ##############################################
@@ -476,24 +491,27 @@ sub TestRFIPost(){
 ##############################################
 
 sub TestLFI(){
-	my $test = shift;
-	my $t = $test;
-	if(length($t) >70){
-		$t = substr($t, 0, 70);
-		$t .= "...";
-	}
-	else{
-		$t .= " "x(99 - length($t)); 
-	}
-	print "[*] Checking: $t\r";
-	my $http = Uniscan::Http->new();
-		my $resp = $http->GET($test);
+
+my ($resp, $test) = 0;
+	while($q->pending){
+		$test = $q->dequeue;
+		my $t = $test;
+		if(length($t) >70){
+			$t = substr($t, 0, 70);
+			$t .= "...";
+		}
+		else{
+			$t .= " "x(99 - length($t)); 
+		}
+		print "[*] Checking: $t\r";
+		$resp = $http->GET($test);
 		if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [LFI] $test");
 		}
+		$resp = 0;
+	}
 }
-
 
 ##############################################
 #  Function TestLFIPost
@@ -505,23 +523,26 @@ sub TestLFI(){
 ##############################################
 
 sub TestLFIPost(){
-	my $test = shift;
-	my ($url, $data) = split('#', $test);
-	my $t = $url;
-	if(length($t) >70){
-		$t = substr($t, 0, 70);
-		$t .= "...";
-	}
-	else{
-		$t .= " "x(99 - length($t)); 
-	}
-	print "[*] Checking: $t\r";
-	my $http = Uniscan::Http->new();
+	while($q->pending){
+		my $test = $q->dequeue;
+		my ($url, $data) = split('#', $test);
+		my $t = $url;
+		if(length($t) >70){
+			$t = substr($t, 0, 70);
+			$t .= "...";
+		}
+		else{
+			$t .= " "x(99 - length($t)); 
+		}
+		print "[*] Checking: $t\r";
+	
 		my $resp = $http->POST($url, $data);
 		if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [LFI] $url\n| Post data: $data");
 		}
+		$resp = 0;
+	}
 }
 
 ##############################################
@@ -534,22 +555,24 @@ sub TestLFIPost(){
 ##############################################
 
 sub TestRCE(){
-	my $test = shift;
-	my $t = $test;
-	if(length($t) >70){
-		$t = substr($t, 0, 70);
-		$t .= "...";
-	}
-	else{
-		$t .= " "x(99 - length($t)); 
-	}
-	print "[*] Checking: $t\r";
-	my $http = Uniscan::Http->new();
+	while($q->pending){
+		my $test = $q->dequeue;
+		my $t = $test;
+		if(length($t) >70){
+			$t = substr($t, 0, 70);
+			$t .= "...";
+		}
+		else{
+			$t .= " "x(99 - length($t)); 
+		}
+		print "[*] Checking: $t\r";
 		my $resp = $http->GET($test);
 		if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [RCE] $test");
 		}
+		$resp = 0;
+	}
 }
 
 ##############################################
@@ -562,23 +585,25 @@ sub TestRCE(){
 ##############################################
 
 sub TestRCEPost(){
-	my $test = shift;
-	my ($url, $data) = split('#', $test);
-	my $t = $url;
-	if(length($t) >70){
-		$t = substr($t, 0, 70);
-		$t .= "...";
-	}
-	else{
-		$t .= " "x(99 - length($t)); 
-	}
-	print "[*] Checking: $t\r";
-	my $http = Uniscan::Http->new();
+	while($q->pending){
+		my $test = $q->dequeue;
+		my ($url, $data) = split('#', $test);
+		my $t = $url;
+		if(length($t) >70){
+			$t = substr($t, 0, 70);
+			$t .= "...";
+		}
+		else{
+			$t .= " "x(99 - length($t)); 
+		}
+		print "[*] Checking: $t\r";
 		my $resp = $http->POST($url, $data);
 		if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [RCE] $url\n| Post data: $data");
 		}
+		$resp = 0;
+	}
 }
 
 
@@ -592,22 +617,24 @@ sub TestRCEPost(){
 ##############################################
 
 sub TestXSS(){
-	my $test = shift;
-	my $t = $test;
-	if(length($t) >70){
-		$t = substr($t, 0, 70);
-		$t .= "...";
-	}
-	else{
-		$t .= " "x(99 - length($t)); 
-	}
-	print "[*] Checking: $t\r";
-	my $http = Uniscan::Http->new();
+	while($q->pending){
+		my $test = $q->dequeue;
+		my $t = $test;
+		if(length($t) >70){
+			$t = substr($t, 0, 70);
+			$t .= "...";
+		}
+		else{
+			$t .= " "x(99 - length($t)); 
+		}
+		print "[*] Checking: $t\r";
 		my $resp = $http->GET($test);
 		if($resp =~ m/<[\w|\s|\t|\n|\r|'|"|\?|\[|\]|\(|\)|\*|&|%|\$|#|@|!|\|\/|,|\.|;|:|\^|~|\}|\{|\+|\-|=|_]+>[_|=|\w|\s|\t|\n|\r|'|"|\?|\[|\]|\(|\)|\*|&|%|\$|#|@|!|\|\/|,|\.|;|:|\^|~|\}|\{|\+|\-]*(<script>alert\('XSS'\)<\/script>|<XSS>|<IMG SRC=\"javascript:alert\('XSS'\);\">|<IMG SRC=javascript:alert\(&quot;XSS&quot;\)>|<IMG SRC=javascript:alert\(String.fromCharCode\(88,83,83\)\)>|<IMG SRC=javascript:alert('XSS')>|<IMG SRC=\"javascript:alert\('XSS'\)\">|<LINK REL=\"stylesheet\" HREF=\"javascript:alert\('XSS'\);\">|<IMG SRC='vbscript:msgbox\(\"XSS\"\)'>|<META HTTP-EQUIV=\"refresh\" CONTENT=\"0; URL=http:\/\/;URL=javascript:alert\('XSS'\);\">|<DIV STYLE=\"background-image: url\(javascript:alert\('XSS'\)\)\">|<body onload=\"javascript:alert\('XSS'\)\"><\/body>|<table background=\"javascript:alert\('XSS'\)\"><\/table>).*</i){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [XSS] $test");
 		}
+		$resp = 0;
+	}
 }
 
 
@@ -621,23 +648,26 @@ sub TestXSS(){
 ##############################################
 
 sub TestXSSPost(){
-	my $test = shift;
-	my ($url, $data) = split('#', $test);
-	my $t = $url;
-	if(length($t) >70){
-		$t = substr($t, 0, 70);
-		$t .= "...";
-	}
-	else{
-		$t .= " "x(99 - length($t)); 
-	}
-	print "[*] Checking: $t\r";
-	my $http = Uniscan::Http->new();
+	while($q->pending){
+		my $test = $q->dequeue;
+		my ($url, $data) = split('#', $test);
+		my $t = $url;
+		if(length($t) >70){
+			$t = substr($t, 0, 70);
+			$t .= "...";
+		}
+		else{
+			$t .= " "x(99 - length($t)); 
+		}
+		print "[*] Checking: $t\r";
+
 		my $resp = $http->POST($url, $data);
 		if($resp =~ m/<[\w|\s|\t|\n|\r|'|"|\?|\[|\]|\(|\)|\*|&|%|\$|#|@|!|\|\/|,|\.|;|:|\^|~|\}|\{|\+|\-|=|_]+>[_|=|\w|\s|\t|\n|\r|'|"|\?|\[|\]|\(|\)|\*|&|%|\$|#|@|!|\|\/|,|\.|;|:|\^|~|\}|\{|\+|\-]*(<script>alert\('XSS'\)<\/script>|<XSS>|<IMG SRC=\"javascript:alert\('XSS'\);\">|<IMG SRC=javascript:alert\(&quot;XSS&quot;\)>|<IMG SRC=javascript:alert\(String.fromCharCode\(88,83,83\)\)>|<IMG SRC=javascript:alert('XSS')>|<IMG SRC=\"javascript:alert\('XSS'\)\">|<LINK REL=\"stylesheet\" HREF=\"javascript:alert\('XSS'\);\">|<IMG SRC='vbscript:msgbox\(\"XSS\"\)'>|<META HTTP-EQUIV=\"refresh\" CONTENT=\"0; URL=http:\/\/;URL=javascript:alert\('XSS'\);\">|<DIV STYLE=\"background-image: url\(javascript:alert\('XSS'\)\)\">|<body onload=\"javascript:alert\('XSS'\)\"><\/body>|<table background=\"javascript:alert\('XSS'\)\"><\/table>).*</i){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [XSS] $url\n| Post data: $data");
 		}
+		$resp = 0;
+	}
 }
 
 
@@ -651,22 +681,24 @@ sub TestXSSPost(){
 ##############################################
 
 sub TestSQL(){
-	my $test = shift;
-	my $t = $test;
-	if(length($t) >70){
-		$t = substr($t, 0, 70);
-		$t .= "...";
-	}
-	else{
-		$t .= " "x(99 - length($t)); 
-	}
-	print "[*] Checking: $t\r";
-	my $http = Uniscan::Http->new();
+	while($q->pending){
+		my $test = $q->dequeue;
+		my $t = $test;
+		if(length($t) >70){
+			$t = substr($t, 0, 70);
+			$t .= "...";
+		}
+		else{
+			$t .= " "x(99 - length($t)); 
+		}
+		print "[*] Checking: $t\r";
 		my $resp = $http->GET($test);
 		if($resp =~/You have an error in your SQL syntax|Microsoft OLE DB Provider for ODBC Drivers error|Supplied argument is not a valid .* result|Unclosed quotation mark after the character string/){
 			$vulnerable++;
-			$func->write("| [+] Vul[$vulnerable] [SQL] $test");
+			$func->write("| [+] Vul[$vulnerable] [SQL-i] $test");
 		}
+		$resp = 0;
+	}
 }
 
 
@@ -681,23 +713,25 @@ sub TestSQL(){
 ##############################################
 
 sub TestSQLPost(){
-	my $test = shift;
-	my ($url, $data) = split('#', $test);
-	my $t = $url;
-	if(length($t) >70){
-		$t = substr($t, 0, 70);
-		$t .= "...";
-	}
-	else{
-		$t .= " "x(99 - length($t)); 
-	}
-	print "[*] Checking: $t\r";
-	my $http = Uniscan::Http->new();
+	while($q->pending){
+		my $test = $q->dequeue;
+		my ($url, $data) = split('#', $test);
+		my $t = $url;
+		if(length($t) >70){
+			$t = substr($t, 0, 70);
+			$t .= "...";
+		}
+		else{
+			$t .= " "x(99 - length($t)); 
+		}
+		print "[*] Checking: $t\r";
 		my $resp = $http->POST($url, $data);
 		if($resp =~/You have an error in your SQL syntax|Microsoft OLE DB Provider for ODBC Drivers error|Supplied argument is not a valid .* result|Unclosed quotation mark after the character string/){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [SQL] $url\n| Post data: $data");
 		}
+		$resp = 0;
+	}
 }
 
 
@@ -713,45 +747,26 @@ sub TestSQLPost(){
 
 sub threadnize(){
 	my ($fun, @tests) = @_;
-	my $q = new Thread::Queue;
+	$q = 0;
+	$q = new Thread::Queue;
 	$tests[0] = 0;
 	foreach my $test (@tests){
 		$q->enqueue($test) if($test);
 	}
-	no strict 'refs';
-	my $to = $q->pending();
-	threads->new(\&{$fun}, $q->dequeue);
-	our @threads = threads->list;
-	my $x=1;
 
-	while($q->pending() || scalar(@threads)){
-		@threads = threads->list;
-                if ($q->pending > 0) {
-                        if  (scalar(@threads) <= $conf{'max_threads'}-1) {
-				threads->new(\&{$fun}, $q->dequeue);
-				$x++;
-			}
-			else {
-                                foreach my $running (@threads) {
-					$running->join;
-                                }
-                        }
-                } else {
-			@threads = threads->list;
-                        if (scalar(@threads)) {
-                                foreach my $running (@threads) {
-                                        $running->join();
-                                }
-                        } 
-                }
-
+	my $x=0;
+	while($q->pending() && $x <= $conf{'max_threads'}-1){
+		no strict 'refs';
+		threads->new(\&{$fun});
+		$x++;
 	}
 
-	@threads = threads->list;
+	my @threads = threads->list();
         foreach my $running (@threads) {
 		$running->join();
         }
-
+	@threads = ();
+	$q = 0;
 }
 
 
@@ -782,11 +797,12 @@ sub GenerateTests(){
 					foreach my $str (@{$test}){
 						$temp = $line;
 						my $t = $var_temp . $str;
-						$temp =~ s/$variables[$x]/$t/g;
+						$temp =~ s/\Q$variables[$x]\E/$t/g;
 						push(@list2, $temp);
 					}
 				}
 			}
+		@variables = ();
 		}
 	}
 	@list = ();
@@ -822,7 +838,7 @@ sub GenerateTestsPost(){
 					foreach my $str (@{$test}){
 						$temp = $line;
 						my $t = $var_temp . $str;
-						$temp =~ s/$variables[$x]/$t/g;
+						$temp =~ s/\Q$variables[$x]\E/$t/g;
 						push(@list2, $url . '#' .$temp);
 					}
 				}
@@ -860,7 +876,7 @@ sub GenerateTestsSql(){
 					foreach my $str (@{$test}){
 						$temp = $line;
 						my $t = $variables[$x] . $str;
-						$temp =~ s/$variables[$x]/$t/g;
+						$temp =~ s/\Q$variables[$x]\E/$t/g;
 						push(@list2, $temp);
 					}
 				}
@@ -898,7 +914,7 @@ sub GenerateTestsPostSql(){
 					foreach my $str (@{$test}){
 						$temp = $line;
 						my $t = $variables[$x] . $str;
-						$temp =~ s/$variables[$x]/$t/g;
+						$temp =~ s/\Q$variables[$x]\E/$t/g;
 						push(@list2, $url . '#' .$temp);
 					}
 				}
@@ -920,23 +936,27 @@ sub GenerateTestsPostSql(){
 ##############################################
 
 sub CheckNoError(){
-	my $url = shift;
-	my $t = $url;
-	if(length($t) >70){
-		$t = substr($t, 0, 70);
-		$t .= "...";
-	}
-	else{
-		$t .= " "x(73 - length($t)); 
-	}
-	print "[*] Checking: $t\r";
-	if($url =~/\?/){
-		my ($url1, $vars) = split('\?', $url);
-		my @var = split('&', $vars);
-		foreach my $v (@var){
-			TestNoError($url, $v);
+	while($q->pending){
+		my $url = $q->dequeue;
+		my $t = $url;
+
+		if(length($t) >70){
+			$t = substr($t, 0, 70);
+			$t .= "...";
 		}
-      }
+		else{
+			$t .= " "x(73 - length($t)); 
+		}
+		print "[*] Checking: $t\r";
+		if($url =~/\?/){
+			my ($url1, $vars) = split('\?', $url);
+			my @var = split('&', $vars);
+			foreach my $v (@var){
+				TestNoError($url, $v);
+			
+			}
+	      }
+	}
 }
 
 
@@ -951,33 +971,29 @@ sub CheckNoError(){
 
 sub TestNoError(){
 	my ($url, $var) = @_;
-	my $http = Uniscan::Http->new();
 
-	
+
 	my $url1 = $url;
-	$url1 =~ s/$var/$var AND 1 = 1/g;
+	$url1 =~ s/$var/$var\+AND\+1=1/g;
 	my $url2 = $url;
-	$url2 =~ s/$var/$var AND 1 = 2/g;
+	$url2 =~ s/$var/$var\+AND\+1=2/g;
 
 
 	my $r1 = $http->GET($url);
-	$r1 = &change($r1);
-
 	my $r2 = $http->GET($url);
-	$r2 = &change($r2);
+
+
 
 	my $r4 = $http->GET($url2);
-	$r4 = &change($r4);
   
 	my $r5 = $http->GET($url1);
-	$r5 = &change($r5);
 
 	my @w1 = split(' ', $r1);
 
 	my $keyword = "";
 	my $key = 0;
 	foreach my $word (@w1){
-		if($r2 =~ m/$word/ && $r4 !~m/$word/ && length($word) > 4){
+		if($r2 =~ m/\Q$word\E/ && $r4 !~m/\Q$word\E/ && length($word) > 5 && $word =~ m/^\w+$/g){
 			if($key == 0){
 				$key =1;
 				$keyword = $word;
@@ -985,34 +1001,15 @@ sub TestNoError(){
 		}
 	}
 
-	if($r5 =~/$keyword/ && $key == 1 && $r5 !~/<b>Warning<\/b>.+\[<a href='function/){
+	if($r5 =~/$keyword/ && $key == 1 && $r5 !~/<b>Warning<\/b>.+\[<a href='function/ && $r4 !~/\Q$keyword\E/){
 		$vulnerable++;
-		$func->write("| [+] Vul[$vulnerable] [SQL]: $url1");
+		$func->write("| [+] Vul[$vulnerable] [Blind SQL-i]: $url1");
 	}
+	($r1, $r2, $r4, $r5, @w1, $keyword) = 0
 }
 
 
-sub change(){
 
-	my $r = shift;
-	my $str = "<|>|\/";
-	$r =~ s/<(.+?)>//g if($r =~/<.+>/);
-	$r =~ s/\*//g if($r =~ /\*/);
-	$r =~ s/\-//g if($r =~ /\-/);
-	$r =~ s/\(//g if($r =~ /\(/);
-	$r =~ s/\)//g if($r =~ /\)/);
-	$r =~ s/\+//g if($r =~ /\+/);
-	$r =~ s/\[//g if($r =~ /\[/);
-	$r =~ s/\]//g if($r =~ /\]/);
-	$r =~ s/\{//g if($r =~ /\{/);
-	$r =~ s/\}//g if($r =~ /\}/);
-	$r =~ s/\?//g if($r =~ /\?/);
-	$r =~ s/<//g if($r =~ /</);
-	$r =~ s/>//g if($r =~ />/);
-	$r =~ s/\///g if($r =~ /\//);
-	$r =~ s/\\//g if($r =~ /\\/);
-	return $;
-}
 
 
 sub ScanStaticRFI(){
