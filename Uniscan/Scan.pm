@@ -1024,6 +1024,7 @@ sub ScanStaticRFI(){
 	my @urls;
 	foreach my $test (@tests){
 		chomp $test;
+		$test = urlencode($test) if($conf{'url_encode'} == 1);
 		push(@urls, $url.$test);
 	}
 	&threadnize("TestRFI", @urls);
@@ -1037,6 +1038,7 @@ sub ScanStaticLFI(){
 	my @urls;
 	foreach my $test (@tests){
 		chomp $test;
+		$test = urlencode($test) if($conf{'url_encode'} == 1);
 		push(@urls, $url.$test);
 	}
 	&threadnize("TestLFI", @urls);
@@ -1052,6 +1054,7 @@ sub ScanStaticRCE(){
 	my @urls;
 	foreach my $test (@tests){
 		chomp $test;
+		$test = urlencode($test) if($conf{'url_encode'} == 1);
 		push(@urls, $url.$test);
 	}
 	&threadnize("TestRCE", @urls);
