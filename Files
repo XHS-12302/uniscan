@@ -2,7 +2,6 @@
 %00
 abonnement.asp
 libraries/phpxmlrpc/xmlrpcs.php
-?j1012-fixate-session
 libraries/joomla/utilities/compat/php50x.phpacart2_0/acart2_0.mdb
 libraries/phpmailer/phpmailer.php
 components/com_user/controller.php

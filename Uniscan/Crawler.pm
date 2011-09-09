@@ -269,7 +269,7 @@ sub get_urls()
 					$link =~s/&amp;/&/g;
 					$link =~ s/\.\///g; 
 					$link =~ s/ //g;
-					if($link =~/^https?:\/\// && $link =~/^$url/ && $link !~/#|javascript:|mailto:/){
+					if($link =~/^https?:\/\// && $link =~/^$url/ && $link !~/#|javascript:|mailto:|\{|\}|function\(/i){
 						my $fil = $func->get_file($link);
 						my $ext = &get_extension($fil);
 						if($conf{extensions} !~/$ext/){

