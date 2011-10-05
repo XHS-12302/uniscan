@@ -8,6 +8,8 @@ use Thread::Queue;
 use strict;
 use Uniscan::Configure;
 use Uniscan::Functions;
+use Uniscan::Factory;
+
 
 our %files	: shared = ( );
 our @list	: shared = ( );
@@ -23,8 +25,8 @@ our $func = Uniscan::Functions->new();
 our %conf = ( );
 our $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
 %conf = $cfg->loadconf();
-our %email : shared = ( );
-
+our $pat :shared = 0;
+our @plugins = ();
 
 ##############################################
 #  Function get_input
@@ -97,12 +99,14 @@ sub add_form(){
 	my ($site, $content) = @_;
 	my @form = ();
 	my $url2;
-	$content =~ s/\n//g;
-	while($content =~ /<form(.+)<\/form>/gi){
+    
+	$content =~ s/\n|\s//g;
+   	while($content =~ m/<form(.+?)<\/form/gi){
 		my $cont = $1;
-		if($cont =~/method *=/i && $cont =~/action *=/i)
+		
+		if($cont =~/method/i && $cont =~/action/i)
 		{
-			$cont =~ /action *= *"(.+?)"/i;
+			$cont =~ m/action *= *["'](.+?)["']/gi;
 			my $action = $1;
 			return if(!$action);
 			if($action =~ /^\//){
@@ -139,7 +143,7 @@ sub add_form(){
 		
 				my $fil = $func->get_file($url2);
 				my $ext = &get_extension($fil);
-				if($conf{'extensions'} !~/$ext/){
+				if($conf{'extensions'} !~/$ext/i){
 					$files{$fil}++;
 					if($files{$fil} <= $conf{'variation'}){
 						push(@list, $url2) if($url2 !~/\s|"|'|:/);
@@ -153,7 +157,8 @@ sub add_form(){
 				}
 				if(!$forms{$action}){
 					if($data){
-						$forms{$action} = $data  if($action !~/\s|"|'|:/);
+					    $forms{$action} = 0;
+						$forms{$action} = $data;
 						$q->enqueue($action."#".$data) if($action !~/\s|"|'|:/);
 					}
 				}
@@ -175,9 +180,8 @@ sub add_form(){
 ##############################################
 
 
-sub get_urls()
-{
-    	my $base = shift; 
+sub get_urls(){
+	my $base = shift; 
 	if($base !~ /\/\/$/){
 		my @lst = ();
 		my @ERs = (	"href=\"(.+)\"", 
@@ -200,15 +204,17 @@ sub get_urls()
 		else{
 			$result = $h->GET($base);
 		}
-
-
+		return "a" if(!$result);
+		return if($result =~/\Q$pat\E/);
 		if($result){
 
-			while($result =~m/([\w\-\_\.]+\@[\w\d\-]+\.\w+[\.[a-z]+]*)/g){
-				$email{$1}++;
+		# plugins start
+			foreach my $p (@plugins){
+				$p->execute($base, $result) if($p->status() == 1);
 			}
+		# plugins end
 
-			if($result =~ m/<form/i){
+			if($result =~ m/<form/gi){
 				&add_form($base, $result);
 			}
 
@@ -269,14 +275,13 @@ sub get_urls()
 					$link =~s/&amp;/&/g;
 					$link =~ s/\.\///g; 
 					$link =~ s/ //g;
-					if($link =~/^https?:\/\// && $link =~/^$url/ && $link !~/#|javascript:|mailto:|\{|\}|function\(/i){
+					if($link =~/^https?:\/\// && $link =~/^$url/ && $link !~/#|javascript:|mailto:|\{|\}|function\(|;/i){
 						my $fil = $func->get_file($link);
 						my $ext = &get_extension($fil);
-						if($conf{extensions} !~/$ext/){
+						if($conf{extensions} !~/\Q$ext\E/){
 							$files{$fil}++;
 							if($files{$fil} <= $conf{'variation'}){
 								push (@lst,$link);
-								
 							}
 							
 						}
@@ -332,12 +337,12 @@ sub start(){
 	my $self = shift;
 	$q = new Thread::Queue;
 	$reqs = 0;
+	$pat = $func->INotPage($url_list[1]);
 	foreach my $ur (@url_list){
 		$q->enqueue($ur);
 	}
 	$u = scalar(@url_list);
 	$url = $url_list[0];
-	$func->write("| Crawler Started:");
 
 	my $x =0 ;
 	while($q->pending() && $x < $conf{'max_threads'}){
@@ -359,6 +364,11 @@ sub start(){
 # crawler end
 
 	$func->write("| [+] Crawling finished, ". scalar(@list) ." URL's found!");
+# show plugins results
+	foreach my $plug (@plugins){
+		$plug->showResults()  if($plug->status() == 1);
+		$plug->clean()  if($plug->status() == 1);
+	}
 	return @list;
 }
 
@@ -407,21 +417,7 @@ return @found;
 }
 
 
-##############################################
-#  Function ShowEmail
-#  this function show all email found by crawler
-# 
-#
-#  Param: nothing
-#  Return: nothing
-##############################################
 
-sub ShowEmail(){
-	my $self = shift;
-	foreach my $mail (%email){
-		$func->write("| [+] E-mail Found: ". $mail . " " . $email{$mail} . "x times") if($email{$mail});
-	}
-}
 
 
 ##############################################
@@ -435,9 +431,10 @@ sub ShowEmail(){
 
 sub GetForms(){
 	my $self = shift;
+	
 	my @f = ();
-	foreach my $key (keys %forms){
-	push(@f, $key.'#'.$forms{$key});
+	foreach my $key (keys %forms){	
+		push(@f, $key.'#'.$forms{$key});
 	}
 	return @f;
 }
@@ -454,8 +451,30 @@ sub Clear(){
 	$u = 0;
 	$url = "";
 	@url_list = ( );
-	%email = ();
 }
+
+
+sub loadPlugins(){
+	@plugins = ();
+	opendir(my $dh, "./Plugins/Crawler/") || die "$!\n";
+	my @plug = grep {/\.pm$/} readdir($dh);
+	closedir $dh;
+	my $x=0;
+	foreach my $d (@plug){
+		$d =~ s/\.pm//g;
+		push(@plugins, Uniscan::Factory->create($d, "Crawler"));
+		$func->write("| Plugin name: $plugins[$x]->{name} v.$plugins[$x]->{version} Loaded.") if($plugins[$x]->status() == 1);
+		$x++;
+	}
+	
+
+}
+
+
+
+
+
+
 
 
 1;

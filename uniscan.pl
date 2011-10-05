@@ -4,17 +4,19 @@ use lib "./Uniscan";
 use Uniscan::Crawler;
 use Uniscan::Functions;
 use Uniscan::Scan;
+
 use Getopt::Std;
 
 my $func = Uniscan::Functions->new();
 my @urllist = ( );
+my $scan;
 
 
-
-getopts('u:f:hbqwertyiopasdgj', \%args);
+getopts('u:f:hbqwsder', \%args);
 
 $func->banner();
 $func->CheckUpdate();
+
 if($args{h}){
 	$func->help();
 }
@@ -26,7 +28,7 @@ if(!$args{u} && !$args{f}){
 if($args{u}){
 	$func->check_url($args{u});
 	push(@urllist, $args{u});
-}
+} 
 elsif($args{f}){
 	open(url_list, "<$args{f}") or die "$!\n";
 	while(<url_list>){
@@ -51,13 +53,12 @@ $|++;
 
 $func->DoLogin();
 
+
 foreach my $url (@urllist){
 
 	$func->write("Scan date: " . $func->date());
-	system("rm -rf temp.txt");
 
 	my $crawler = Uniscan::Crawler->new();
-	$crawler->Clear();
 	$crawler->AddUrl($url);
 
 	$func->write("="x99);
@@ -67,8 +68,11 @@ foreach my $url (@urllist){
 	$func->INotPage($url);
 
 	$func->write("="x99);
-	if(!$args{q}) {
-		$func->write("| Directory check:");
+
+# start checks to feed the crawler
+
+	if($args{q}) {
+		$func->write("|\n| Directory check:");
 		my @dir = $func->Check($url, "Directory");
 		foreach my $d (@dir){
 			$crawler->AddUrl($d);
@@ -76,8 +80,8 @@ foreach my $url (@urllist){
 		@dir   = ();
 	}
 
-	if(!$args{w}) {
-		$func->write("| File check:");
+	if($args{w}) {
+		$func->write("|\n| File check:");
 		my @files = $func->Check($url, "Files");
 		foreach my $f (@files){
 			$crawler->AddUrl($f);
@@ -85,86 +89,71 @@ foreach my $url (@urllist){
 		@files = ();
 	}
 
-	if(!$args{d}){
+	if($args{e}){
 		$func->write("| Check robots.txt:");
 		foreach my $f ($crawler->CheckRobots($url)){
 			$crawler->AddUrl($f);
 		}
 	}
 
+# end of checks to feed the crawler
 
 
 
 
-	my @urls = $crawler->start();
-	if(!$args{j}){
-		$func->write("| ");
-		$crawler->ShowEmail();
-	}
-	my @forms = $crawler->GetForms();
-	$crawler->Clear();
-	$crawler = 0;
-	my $scan = Uniscan::Scan->new();
-	$scan->Clear();
-	if(!$args{g}){
-		$func->write("| Check if PUT method is enabled:");
-		$scan->CheckPut($url);
-	}
-
-	if(!$args{e}){
-		$scan->CheckBackupFiles(@urls) if(scalar(@urls));
-	}
-
-	if(!$args{r}){
-		$func->write("| RFI tests:" . " "x88);
-		$scan->ScanRFICrawler(@urls) if(scalar(@urls));
-		$scan->ScanRFICrawlerPost(@forms) if(scalar(@forms));
-	}
-
-	if(!$args{t}){
-		$func->write("| LFI tests:" . " "x88);
-		$scan->ScanLFICrawler(@urls) if(scalar(@urls));
-		$scan->ScanLFICrawlerPost(@forms) if(scalar(@forms));
-	}
-
-	if(!$args{y}){
-		$func->write("| RCE tests:" . " "x88);
-		$scan->ScanRCECrawler(@urls) if(scalar(@urls));
-		$scan->ScanRCECrawlerPost(@forms) if(scalar(@forms));
-	}
-
-	if(!$args{o}){
-		$func->write("| XSS tests:" . " "x88);
-		$scan->ScanXSSCrawler(@urls) if(scalar(@urls));
-		$scan->ScanXSSCrawlerPost(@forms) if(scalar(@forms));
-	}
-
-	if(!$args{i}){
-		$func->write("| SQL-i tests:" . " "x78);
-		$scan->ScanSQLCrawler(@urls) if(scalar(@urls));
-		$scan->ScanSQLCrawlerPost(@forms) if(scalar(@forms));
+	if($args{d}){
+		# crawler start
+		$func->write("| Crawler Started:");
+		$crawler->loadPlugins();
+		our @urls = $crawler->start();
+		our @forms = $crawler->GetForms();
+		foreach (@forms){
+			push(@urls, $_);
+		}
+		# crawler end
+		$crawler->Clear();
+		$crawler = 0;
 	}
 
 
-	$func->write("| Static Checks: ". " "x83) if(!$args{p} || !$args{a} || !$args{s});
+	$scan = Uniscan::Scan->new() if(!$scan);
 
-	if(!$args{p}){
-		$func->write("| RFI: " . " "x92);
-		$scan->ScanStaticRFI($url);
+	if($args{d}){
+		#start dinamic and static tests
+		$func->write("="x99);
+		$func->write("| Dynamic tests:");
+		$scan->loadPluginsDynamic();
+		$scan->runDynamic(@urls);
 	}
+	
+	if($args{s}){
+		$func->write("="x99);
+		$func->write("| Static tests:");
+		$scan->loadPluginsStatic();
+		$scan->runStatic($url);
+	}
+	
 
-	if(!$args{a}){
-		$func->write("| LFI: " . " "x92);
-		$scan->ScanStaticLFI($url);
+	if($args{r}){
+		use Uniscan::Stress;
+		my $stress = Uniscan::Stress->new();
+		$func->write("="x99);
+		$func->write("| Stress tests:");
+		$stress->loadPlugins();
+		$stress->run($url);
 	}
-
-	if(!$args{s}){
-		$func->write("| RCE: " . " "x92);
-		$scan->ScanStaticRCE($url);
-	}
+	
 	$func->write("="x99);
 	$func->write("Scan end date: " . $func->date() . "\n\n\n");
+
 }
+
+
+
+
+
+
+
 
 
 
@@ -176,6 +165,7 @@ foreach my $url (@urllist){
 # Param: nothing
 # Return: nothing
 ##############################################
+
 
 sub background{
 	

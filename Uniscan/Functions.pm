@@ -96,6 +96,7 @@ sub Check(){
 	@threads = threads->list();
         foreach my $running (@threads) {
 		$running->join();
+		print "[*] Remaining tests: ". $q->pending ." Threads: " . (scalar(threads->list())+1) ."       \r";
         }
 return @list;
 }
@@ -116,15 +117,7 @@ sub GetResponse(){
 	
 	while($q->pending()){
 		my $url1 = $q->dequeue;
-		my $ch = "";
-		if(length($url1) > 82){
-		    $ch = substr($url1, 0, 79) . "...\r";
-		}
-		else{
-			$ch = $url1 . " "x(82 - length($url1)) . "\r";
-		}
-		print "| [*] Checking: $ch\r";
-		$ch = "";
+		print "[*] Remaining tests: ". $q->pending ." Threads: " . (scalar(threads->list())+1) ."       \r";
 		if($url1 =~/^https:\/\//){
 			my $http = Uniscan::Http->new();
 			my $response = $http->GETS($url1);
@@ -132,10 +125,10 @@ sub GetResponse(){
 				if($response =~ $conf{'code'} && $pattern !~ m/$response->content/){
 					push(@list, $url1);
 					if(length($url1) < 99){
-						&write('', "| [+] CODE: " .$response."\t URL: $url1" . " "x(99 - length($url1)));
+						&write('', "| [+] CODE: " .$response." URL: $url1" . " "x(99 - length($url1)));
 					}
 					else {
-						&write('', "| [+] CODE: " .$response."\t URL: $url1");
+						&write('', "| [+] CODE: " .$response." URL: $url1");
 					}
 				}
 			}
@@ -226,6 +219,7 @@ sub INotPage(){
 	}
 	$pattern = "not found|não encontrada|página solicitada não existe|could not be found" if(!$pattern);
 	$h = "";
+	return $pattern;
 }
 
 ##############################################
@@ -340,26 +334,17 @@ sub help(){
 		"\t-u \t<url> example: https://www.example.com/\n".
 		"\t-f \t<file> list of url's\n".
 		"\t-b \tUniscan go to background\n".
-		"\t-q \tDisable Directory checks\n".
-		"\t-w \tDisable File checks\n".
-		"\t-e \tDisable Backup file checks\n".
-		"\t-r \tDisable RFI checks by Crawler\n".
-		"\t-t \tDisable LFI checks by Crawler\n".
-		"\t-y \tDisable RCE checks by Crawler\n".
-		"\t-i \tDisable SQL checks by Crawler\n".
-		"\t-o \tDisable XSS checks by Crawler\n".
-		"\t-p \tDisable static RFI checks\n".
-		"\t-a \tDisable static LFI checks\n".
-		"\t-s \tDisable static RCE checks\n".
-		"\t-d \tDisable /robots.txt check\n".
-		"\t-g \tDisable PUT method check\n".
-		"\t-j \tNot show e-mails found by Crawler\n".
-		"\n\tOption -u or -f is required, all others no.\n".
+		"\t-q \tEnable Directory checks\n".
+		"\t-w \tEnable File checks\n".
+		"\t-e \tEnable robots.txt check\n".
+		"\t-d \tEnable Dynamic checks\n".
+		"\t-s \tEnable Static checks\n".
+		"\t-r \tEnable Stress checks\n".
 		"\n".
 		"usage: \n".
-		"[1] perl $0 -u http://www.example.com/\n".
-		"[2] perl $0 -f /home/user/file.txt -b\n".
-		"[3] perl $0 -u https://www.example.com/\n\n\n";
+		"[1] perl $0 -u http://www.example.com/ -qweds\n".
+		"[2] perl $0 -f /home/user/file.txt -bqweds\n".
+		"[3] perl $0 -u https://www.example.com/ -r\n\n\n";
 	exit();
 }
 
@@ -425,6 +410,9 @@ sub DoLogin(){
 
 	}
 }
+
+
+
 
 
 1;

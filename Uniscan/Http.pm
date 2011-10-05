@@ -1,7 +1,7 @@
 package Uniscan::Http;
 
 use Moose;
-use Net::SSLeay qw(get_https post_https sslcat make_headers make_form get_https3);;
+use Net::SSLeay qw(get_https post_https sslcat make_headers make_form get_https3);
 use HTTP::Request;
 use HTTP::Response;
 use LWP::UserAgent;
@@ -85,6 +85,10 @@ sub GET(){
         }
 
         my $response=$ua->request($req);
+	if($response->code == 404){
+		return "page 404 ";
+	}
+
         return $response->content;
         }
 }
