@@ -81,7 +81,8 @@ foreach my $url (@urllist){
 	}
 
 	if($args{w}) {
-		$func->write("|\n| File check:");
+		$func->write("|" . " "x99);
+		$func->write("| File check:");
 		my @files = $func->Check($url, "Files");
 		foreach my $f (@files){
 			$crawler->AddUrl($f);
