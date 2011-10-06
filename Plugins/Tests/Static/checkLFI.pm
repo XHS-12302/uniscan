@@ -8,7 +8,7 @@ use threads;
 
 sub new {
     my $class    = shift;
-    my $self     = {name => "Local File Include tests", version=>1.0};
+    my $self     = {name => "Local File Include tests", version=>1.1};
 	our $enabled  = 1;
 	our %conf = ( );
 	our $c = Uniscan::Configure->new(conffile => "uniscan.conf");
@@ -99,6 +99,8 @@ my ($resp, $test) = 0;
 	}
 }
 
-
+sub clean(){
+ my $self = shift;
+}
 
 1;

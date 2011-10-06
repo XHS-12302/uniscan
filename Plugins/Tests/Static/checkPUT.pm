@@ -5,7 +5,7 @@ use Uniscan::Functions;
 
 sub new {
     my $class    = shift;
-    my $self     = {name => "PUT method test", version => 1.0};
+    my $self     = {name => "PUT method test", version => 1.1};
 	our $enabled  = 1;
 	our $func = Uniscan::Functions->new();
 	our $http = Uniscan::Http->new();
@@ -43,5 +43,9 @@ sub status(){
 }
 
 
+
+sub clean(){
+ my $self = shift;
+}
 
 1;
