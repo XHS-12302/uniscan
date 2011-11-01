@@ -2,12 +2,13 @@ package Plugins::Crawler::codeDisclosure;
 
 use Uniscan::Functions;
 
+	my $func = Uniscan::Functions->new();
+
 sub new {
     my $class    = shift;
     my $self     = {name => "Code Disclosure", version => 1.0};
 	our %source : shared = ();
 	our $enabled = 1;
-	our $func = Uniscan::Functions->new();
     return bless $self, $class;
 }
 
@@ -28,7 +29,7 @@ sub execute {
 
 sub showResults(){
 	my $self = shift;
-	our $func->write("|\n| Source Code:");
+	$func->write("|\n| Source Code:");
 	foreach my $url (%source){
 		$func->write("| [+] Source Code Found: ". $url . " " . $source{$url} . "x times") if($source{$url});
 	}

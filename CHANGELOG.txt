@@ -1,3 +1,10 @@
+uniscan v5.1 date 01/11/2011
+
+- Added Google search
+- Added Bing search
+- Bug fix in function get_file()
+
+
 Uniscan v5.0 date: 05/10/2011
 
 - Redesigned the scanner architecture to support plugins system.

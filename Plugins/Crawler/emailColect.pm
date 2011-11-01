@@ -2,12 +2,13 @@ package Plugins::Crawler::emailColect;
 
 use Uniscan::Functions;
 
+	my $func = Uniscan::Functions->new();
+
 sub new {
     my $class    = shift;
     my $self     = {name => "E-mail Detection", version => 1.0};
 	our %email : shared = ();
 	our $enabled = 1;
-	our $func = Uniscan::Functions->new();
     return bless $self, $class;
 }
 

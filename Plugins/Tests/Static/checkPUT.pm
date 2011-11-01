@@ -3,12 +3,13 @@ package Plugins::Tests::Static::checkPUT;
 use Uniscan::Http;
 use Uniscan::Functions;
 
+	my $func = Uniscan::Functions->new();
+	my $http = Uniscan::Http->new();
+
 sub new {
     my $class    = shift;
     my $self     = {name => "PUT method test", version => 1.1};
 	our $enabled  = 1;
-	our $func = Uniscan::Functions->new();
-	our $http = Uniscan::Http->new();
     return bless $self, $class;
 }
 

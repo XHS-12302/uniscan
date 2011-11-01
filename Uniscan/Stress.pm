@@ -5,11 +5,12 @@ use Uniscan::Factory;
 use Uniscan::Functions;
 
 our @plugins = ();
-our $func = Uniscan::Functions->new();
+
 
 sub loadPlugins(){
 	my $self = shift;
 	@plugins = ();
+	my $func = Uniscan::Functions->new();
 	opendir(my $dh, "./Plugins/Stress/") || die "$!\n";
 	my @plug = sort grep {/\.pm$/} readdir($dh);
 	closedir $dh;

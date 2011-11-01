@@ -12,6 +12,7 @@ use LWP::UserAgent;
 use Uniscan::Configure;
 use strict;
 
+
 our %conf = ( );
 our $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
 %conf = $cfg->loadconf();
@@ -25,7 +26,7 @@ our $q :shared = new Thread::Queue;
 #
 #
 #  Param: $url
-#  Return: $ip
+# 
 ##############################################
 
 
@@ -54,6 +55,7 @@ sub GetServerIp(){
 	$url =~ s/http:\/\///g if($url =~/http:\/\//);
 	$url =~ s/https:\/\///g if($url =~/https:\/\//);
 	$url = substr($url, 0, index($url, '/'));
+	$url = substr($url, 0, index($url, ':')) if($url =~/:/); 
 	return(join(".", unpack("C4", (gethostbyname($url))[4])));
 }
 
@@ -235,6 +237,7 @@ sub get_file(){
 	my ($self, $url1) = @_;
 	substr($url1,0,7) = "" if($url1 =~/http:\/\//);
 	substr($url1,0,8) = "" if($url1 =~/https:\/\//);
+
 	if($url1 =~ /\//){
 		$url1 = substr($url1, index($url1, '/'), length($url1)) if(length($url1) != index($url1, '/'));
 		if($url1 =~ /\?/){
@@ -242,8 +245,12 @@ sub get_file(){
 		}
 		return $url1;
 	}
+	elsif($url1=~/\?/){
+		$url1 = substr($url1, 0, index($url1, '?'));
+		return $url1;
+	}
 	else {
-		return 0;
+		return $url1;
 	}
 }
 
@@ -340,11 +347,16 @@ sub help(){
 		"\t-d \tEnable Dynamic checks\n".
 		"\t-s \tEnable Static checks\n".
 		"\t-r \tEnable Stress checks\n".
+		"\t-i \t<dork> Bing search\n".
+		"\t-o \t<dork> Google search\n".
 		"\n".
 		"usage: \n".
 		"[1] perl $0 -u http://www.example.com/ -qweds\n".
-		"[2] perl $0 -f /home/user/file.txt -bqweds\n".
-		"[3] perl $0 -u https://www.example.com/ -r\n\n\n";
+		"[2] perl $0 -f sites.txt -bqweds\n".
+		"[3] perl $0 -i uniscan\n".
+		"[4] perl $0 -i \"ip:xxx.xxx.xxx.xxx\"\n".
+		"[5] perl $0 -o \"inurl:uniscan\"\n".
+		"[6] perl $0 -u https://www.example.com/ -r\n\n\n";
 	exit();
 }
 

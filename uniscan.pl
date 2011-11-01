@@ -4,7 +4,8 @@ use lib "./Uniscan";
 use Uniscan::Crawler;
 use Uniscan::Functions;
 use Uniscan::Scan;
-
+use Uniscan::Bing;
+use Uniscan::Google;
 use Getopt::Std;
 
 my $func = Uniscan::Functions->new();
@@ -12,7 +13,7 @@ my @urllist = ( );
 my $scan;
 
 
-getopts('u:f:hbqwsder', \%args);
+getopts('u:f:i:o:hbqwsder', \%args);
 
 $func->banner();
 $func->CheckUpdate();
@@ -21,7 +22,7 @@ if($args{h}){
 	$func->help();
 }
 
-if(!$args{u} && !$args{f}){
+if(!$args{u} && !$args{f} && !$args{i} && !$args{o}){
 	$func->help();
 }
 
@@ -38,6 +39,35 @@ elsif($args{f}){
 		push(@urllist, $line);
 	}
 	close(url_list);
+}
+elsif($args{i} && $args{o}){
+	$func->write("="x99);
+	$func->write("| Bing:");
+	my $bing = Uniscan::Bing->new();
+	$bing->search($args{i});
+	$func->write("| Site list saved in file sites.txt");
+	$func->write("="x99);
+	$func->write("| Google:");
+	my $google = Uniscan::Google->new();
+	$google->search($args{o});
+	$func->write("| Site list saved in file sites.txt");
+	$func->write("="x99);
+}
+
+elsif($args{i}){
+	$func->write("="x99);
+	$func->write("| Bing:");
+	my $bing = Uniscan::Bing->new();
+	$bing->search($args{i});
+	$func->write("| Site list saved in file sites.txt");
+}
+elsif($args{o}){
+	$func->write("="x99);
+	$func->write("| Google:");
+	my $google = Uniscan::Google->new();
+	$google->search($args{o});
+	$func->write("| Site list saved in file sites.txt");
+	$func->write("="x99);
 }
 else{
     $func->help();
@@ -91,7 +121,7 @@ foreach my $url (@urllist){
 	}
 
 	if($args{e}){
-		$func->write("| Check robots.txt:");
+		$func->write("|\n| Check robots.txt:");
 		foreach my $f ($crawler->CheckRobots($url)){
 			$crawler->AddUrl($f);
 		}
@@ -104,7 +134,7 @@ foreach my $url (@urllist){
 
 	if($args{d}){
 		# crawler start
-		$func->write("| Crawler Started:");
+		$func->write("|\n| Crawler Started:");
 		$crawler->loadPlugins();
 		our @urls = $crawler->start();
 		our @forms = $crawler->GetForms();

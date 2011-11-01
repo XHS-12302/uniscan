@@ -2,12 +2,13 @@ package Plugins::Crawler::externalHost;
 
 use Uniscan::Functions;
 
+	my $func = Uniscan::Functions->new();
+
 sub new {
     my $class    = shift;
     my $self     = {name => "External Host Detect", version => 1.1};
 	our %external : shared = ();
 	our $enabled = 1;
-	our $func = Uniscan::Functions->new();
     return bless $self, $class;
 }
 

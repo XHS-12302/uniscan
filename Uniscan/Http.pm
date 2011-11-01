@@ -29,11 +29,11 @@ sub HEAD(){
 	my ($self, $url1) = @_;
 	my $req=HTTP::Request->new(HEAD=>$url1);
 	$req->authorization_basic($conf{'basic_login'}, $conf{'basic_pass'}) if($conf{'use_basic_auth'} == 1);
-        my $ua=LWP::UserAgent->new(agent => "Uniscan ". $conf{'version'} . " http://www.uniscan.com.br/");
+        my $ua=LWP::UserAgent->new(agent => $conf{'user_agent'});
         $ua->timeout($conf{'timeout'});
         $ua->max_size($conf{'max_size'});
 	$ua->protocols_allowed( [ 'http'] );
-        if($conf{'proxy'} ne "0.0.0.0" && $conf{'proxy_port'} != 65000){
+        if($conf{'use_proxy'} == 1){
                 $ua->proxy(['http'], 'http://'. $conf{'proxy'} . ':' . $conf{'proxy_port'} . '/');
         }
 
@@ -58,7 +58,7 @@ sub GET(){
 	return if(!$url1);
 
         if($url1 =~/^https/){
-                if($conf{'proxy'} ne "0.0.0.0" && $conf{'proxy_port'} != 65000){
+                if($conf{'use_proxy'} == 1){
                         Net::SSLeay::set_proxy($conf{'proxy'}, $conf{'proxy_port'});
                 }
                 substr($url1,0,8) = "";
@@ -74,13 +74,13 @@ sub GET(){
         else{
         my $req = HTTP::Request->new(GET=>$url1);
 	$req->authorization_basic($conf{'basic_login'}, $conf{'basic_pass'}) if($conf{'use_basic_auth'} == 1);
-        my $ua	= LWP::UserAgent->new(agent => "Uniscan ". $conf{'version'} . " http://www.uniscan.com.br/");
+        my $ua	= LWP::UserAgent->new(agent => $conf{'user_agent'});
 
 	$ua->cookie_jar($cookie_jar);
         $ua->timeout($conf{'timeout'});
         $ua->max_size($conf{'max_size'});
 	$ua->protocols_allowed( [ 'http'] );
-        if($conf{'proxy'} ne "0.0.0.0" && $conf{'proxy_port'} != 65000){
+        if($conf{'use_proxy'} == 1){
                 $ua->proxy(['http'], 'http://'. $conf{'proxy'} . ':' . $conf{'proxy_port'} . '/');
         }
 
@@ -107,7 +107,7 @@ sub GETS(){
         my ($self, $url1 )= @_;
 	return if(!$url1);
 
-	if($conf{'proxy'} ne "0.0.0.0" && $conf{'proxy_port'} != 65000){
+	if($conf{'use_proxy'} == 1){
 		Net::SSLeay::set_proxy($conf{'proxy'}, $conf{'proxy_port'});
         }
 
@@ -131,7 +131,7 @@ sub POST(){
         my ($self, $url1, $data) = @_;
         $data =~ s/\r//g;
         if($url1 =~/^https/){
-                if($conf{'proxy'} ne "0.0.0.0" && $conf{'proxy_port'} != 65000){
+                if($conf{'use_proxy'} == 1){
                         Net::SSLeay::set_proxy($conf{'proxy'}, $conf{'proxy_port'});
                 }
                 substr($url1,0,8) = "";
@@ -151,14 +151,14 @@ sub POST(){
 	$request->authorization_basic($conf{'basic_login'}, $conf{'basic_pass'}) if($conf{'use_basic_auth'} == 1);
         $request->content($data);
         $request->content_type('application/x-www-form-urlencoded');
-        my $ua=LWP::UserAgent->new(agent => "Uniscan ". $conf{'version'} . " http://www.uniscan.com.br/");
+        my $ua=LWP::UserAgent->new(agent => $conf{'user_agent'});
 	
 	$ua->cookie_jar($cookie_jar);
 
         $ua->timeout($conf{'timeout'});
         $ua->max_size($conf{'max_size'});
 	$ua->protocols_allowed( [ 'http'] );
-        if($conf{'proxy'} ne "0.0.0.0" && $conf{'proxy_port'} != 65000){
+        if($conf{'use_proxy'} == 1){
                 $ua->proxy(['http'], 'http://'. $conf{'proxy'} . ':' . $conf{'proxy_port'} . '/');
         }
         my $response=$ua->request($request);
@@ -181,11 +181,11 @@ sub PUT(){
         my $headers = HTTP::Headers->new();
         my $req=HTTP::Request->new(PUT=>$url, $headers, $data);
 	$req->authorization_basic($conf{'basic_login'}, $conf{'basic_pass'}) if($conf{'use_basic_auth'} == 1);
-        my $ua=LWP::UserAgent->new(agent => "Uniscan ". $conf{'version'} . " http://www.uniscan.com.br/");
+        my $ua=LWP::UserAgent->new(agent => $conf{'user_agent'});
         $ua->timeout($conf{'timeout'});
         $ua->max_size($conf{'max_size'});
 	$ua->protocols_allowed( [ 'http'] );
-        if($conf{'proxy'} ne "0.0.0.0" && $conf{'proxy_port'} != 65000){
+        if($conf{'use_proxy'} == 1){
                 $ua->proxy(['http'], 'http://'. $conf{'proxy'} . ':' . $conf{'proxy_port'} . '/');
         }
 

@@ -4,6 +4,7 @@ use Uniscan::Functions;
 use Thread::Queue;
 use threads;
 
+my $func = Uniscan::Functions->new();
 
 sub new {
     my $class    = shift;
@@ -12,7 +13,6 @@ sub new {
 	our $q : shared = "";
 	our $max_threads :shared = 50;
 	our $minuts = 1; 
-	our $func = Uniscan::Functions->new();
 	our $time : shared = 0;
     return bless $self, $class;
 }
@@ -24,7 +24,7 @@ sub execute(){
 	$func->write("|"." "x99);
 	$func->write("| Mini Stress Test:");
 	$time = time() + ($minuts * 60);
-	
+
 	&threadnize("miniStress", $url);
 	$func->write("| Mini Stress Test End.");
 	}
