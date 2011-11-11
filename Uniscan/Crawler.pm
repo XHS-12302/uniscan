@@ -188,6 +188,7 @@ sub get_urls(){
 				"href='(.+)'", 
 				"href=(.+?)>", 
 				"location.href='(.+)'",
+				"window\.open\('(.+?)'(,'')*\)",
 				"src='(.+)'",
 				"src=\"(.+)\"",
 				"location.href=\"(.+)\"", 

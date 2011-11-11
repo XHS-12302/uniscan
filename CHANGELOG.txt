@@ -1,3 +1,9 @@
+uniscan v5.2 date 11/11/2011
+
+- added new regex in crawler
+- Bug fix in plig-in SQL-injection
+
+
 uniscan v5.1 date 01/11/2011
 
 - Added Google search

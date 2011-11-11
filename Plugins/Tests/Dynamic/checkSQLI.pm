@@ -12,7 +12,7 @@ use threads;
 
 sub new {
 	my $class    = shift;
-	my $self     = {name => "SQL-injection tests", version=>1.0};
+	my $self     = {name => "SQL-injection tests", version=>1.1};
 	our $enabled  = 1;
 	our %conf = ( );
 	%conf = $c->loadconf();
@@ -61,7 +61,7 @@ sub TestSQL(){
 		my $test = $q->dequeue;
 		print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
 		my $resp = $http->GET($test);
-		if($resp =~/You have an error in your SQL syntax|Microsoft OLE DB Provider for ODBC Drivers error|Supplied argument is not a valid .* result|Unclosed quotation mark after the character string/){
+		if($resp =~/You have an error in your SQL syntax|Microsoft OLE DB Provider for ODBC Drivers|Supplied argument is not a valid .* result|Unclosed quotation mark after the character string/){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [SQL-i] $test               ");
 		}
@@ -76,7 +76,7 @@ sub TestSQLPost(){
 		my ($url, $data) = split('#', $test);
 		print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
 		my $resp = $http->POST($url, $data);
-		if($resp =~/You have an error in your SQL syntax|Microsoft OLE DB Provider for ODBC Drivers error|Supplied argument is not a valid .* result|Unclosed quotation mark after the character string/){
+		if($resp =~/You have an error in your SQL syntax|Microsoft OLE DB Provider for ODBC Drivers|Supplied argument is not a valid .* result|Unclosed quotation mark after the character string/){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [SQL] $url               \n| Post data: $data               ");
 		}
