@@ -2,7 +2,7 @@ package Plugins::Crawler::webShellDisclosure;
 
 use Uniscan::Functions;
 
-# this plug-in search for web backdoors while crawler is running
+# this plug-in search for web backdoors while crawler is running.
 
 my $func = Uniscan::Functions->new();
 
