@@ -11,7 +11,7 @@ my @wb = (	"c99shell<\/title>",
 		"<form method=\"POST\" action=\"cfexec\.cfm\">",
 		"<input type=text name=\".CMD\" size=45 value=",
 		"<title>awen asp\.net webshell<\/title>",
-		"<FORM METHOD\=GET ACTION\='cmdjsp\.jsp'>",
+		"<FORM METHOD=GET ACTION='cmdjsp\.jsp'>",
 		"JSP Backdoor Reverse Shell",
 		"Simple CGI backdoor by DK",
 		"execute command: <input type=\"text\" name=\"c\">",
@@ -22,11 +22,28 @@ my @wb = (	"c99shell<\/title>",
 		"PHP Shell",
 		"PHPShell",
 		"REMVIEW TOOLS",
+		"<title>iTSecTeam<\/title>",
+		"JSP Backdoor Reverse Shell",
+		"<title>\*  ernealizm  \* <\/title>",
+		"<title>JSP Shell<\/title>",
+		"<title>Knull Shell<\/title>",
+		"<title>.+\- WSO.+</title>",
+		"<title>SST Sheller !<\/title>",
+		"<title>SyRiAn Sh3ll ",
+		"<title>Mini Php Shell",
+		"<title>ASPX Shell<\/title>",
+		"<title>ZoRBaCK Connect<\/title>",
+		"<title>.+Ani\-Shell.+<\/title>",
+		"<title>Stored Procedure Execute<\/title>",
+		"<title>:: www\.h4ckcity\.org :: Coded By 2MzRp & LocalMan ::<\/title>",
+		"<title>PhpShell 2\.0<\/title>",
+		"<title>.+NTDaddy.+<\/title>",
+		"<title>PHP\-Terminal"
 );
 
 sub new {
 	my $class    = shift;
-	my $self     = {name => "Web Backdoor Disclosure", version => 1.0};
+	my $self     = {name => "Web Backdoor Disclosure", version => 1.1};
 	our %shells : shared = ();
 	our $enabled = 1;
 	return bless $self, $class;

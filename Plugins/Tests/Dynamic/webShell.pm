@@ -17,7 +17,7 @@ my $http = Uniscan::Http->new();
 
 sub new {
 	my $class    = shift;
-	my $self     = {name => "Web Shell Finder", version=>1.0};
+	my $self     = {name => "Web Shell Finder", version=>1.1};
 	our $enabled  = 1;
 	our %conf = ( );
 	%conf = $c->loadconf();
@@ -51,7 +51,24 @@ sub execute(){
 		"i.php",
 		"rem_view.php",
 		"remview.php",
-		"rem.php"
+		"rem.php",
+		"27.9.php",
+		"aspxshell.aspx",
+		"connect-back.php",
+		"erne.php",
+		"itsecteam_shell.php",
+		"itsecteam.php",
+		"jspbd.jsp",
+		"jspShell.jsp",
+		"knullsh.php",
+		"kolang.php",
+		"Sst-Sheller.php",
+		"SyRiAn.Sh3ll.V7.php",
+		"Ani-Shell.php",
+		"cmdexec.aspx",
+		"2mv2.php",
+		"ntdaddy.asp",
+		"phpterm.php"
 	);
 
 	foreach my $d (@urls){
@@ -93,7 +110,7 @@ sub findShell(){
 		"<form method=\"POST\" action=\"cfexec\.cfm\">",
 		"<input type=text name=\".CMD\" size=45 value=",
 		"<title>awen asp\.net webshell<\/title>",
-		"<FORM METHOD\=GET ACTION\='cmdjsp\.jsp'>",
+		"<FORM METHOD=GET ACTION='cmdjsp\.jsp'>",
 		"JSP Backdoor Reverse Shell",
 		"Simple CGI backdoor by DK",
 		"execute command: <input type=\"text\" name=\"c\">",
@@ -104,6 +121,23 @@ sub findShell(){
 		"PHP Shell",
 		"PHPShell",
 		"REMVIEW TOOLS",
+		"<title>iTSecTeam<\/title>",
+		"JSP Backdoor Reverse Shell",
+		"<title>\*  ernealizm  \* <\/title>",
+		"<title>JSP Shell<\/title>",
+		"<title>Knull Shell<\/title>",
+		"<title>.+\- WSO.+</title>",
+		"<title>SST Sheller !<\/title>",
+		"<title>SyRiAn Sh3ll ",
+		"<title>Mini Php Shell",
+		"<title>ASPX Shell<\/title>",
+		"<title>ZoRBaCK Connect<\/title>",
+		"<title>.+Ani\-Shell.+<\/title>",
+		"<title>Stored Procedure Execute<\/title>",
+		"<title>:: www\.h4ckcity\.org :: Coded By 2MzRp & LocalMan ::<\/title>",
+		"<title>PhpShell 2\.0<\/title>",
+		"<title>.+NTDaddy.+<\/title>",
+		"<title>PHP\-Terminal"
 	);
 
 	while($q->pending()){
