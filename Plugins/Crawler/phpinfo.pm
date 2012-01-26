@@ -75,7 +75,7 @@ sub showResults(){
 		$func->write("| [+] phpinfo() page: ". $w . " " . $pages{$w} . "x times") if($pages{$w});
 	}
 	foreach my $key (keys %info){
-		print "| \t$key: ". $info{$key} . "\n";
+		$func->write("| \t$key: ". $info{$key} . "\n");
 	}
 }
 
