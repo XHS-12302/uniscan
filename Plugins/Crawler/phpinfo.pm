@@ -23,48 +23,15 @@ sub execute {
 
 	if($content =~m/<title>phpinfo\(\)<\/title>/gi){
 		$pages{$url}++;
-	}
 
-	if($content =~m/<tr><td class="e">PHP Version <\/td><td class="v">(.+?)<\/td><\/tr>/gi){
-		$info{'PHP version'} = $1;  
-	}
-	if($content =~m/<tr><td class="e">System <\/td><td class="v">(.+?)<\/td><\/tr>/g){
-		$info{'System'} = $1;
-	}
-	if($content =~m/<tr><td class="e">Apache Version <\/td><td class="v">(.+?)<\/td><\/tr>/g){
-		$info{'Apache Version'} = $1;
-	}
-	if($content =~m/<tr><td class="e">Server Administrator <\/td><td class="v">(.+?)<\/td><\/tr>/g){
-		$info{'Server Administrator'} = $1;
-	}
-	if($content =~m/<tr><td class="e">Server Root <\/td><td class="v">(.+?)<\/td><\/tr>/g){
-		$info{'Server Root'} = $1;
-	}
-	if($content =~m/<tr><td class="e">SCRIPT_FILENAME <\/td><td class="v">(.+?)<\/td><\/tr>/g){
-		$info{'Script Filename'} = $1;
-	}
-	if($content =~m/<tr><td class="e">SERVER_SIGNATURE <\/td><td class="v">(.+?)<\/td><\/tr>/g){
-		$info{'Server Signature'} = $1;
-	}
-	if($content =~m/<tr><td class="e">allow_url_fopen<\/td><td class="v">(.+?)<\/td><td class="v">(.+)<\/td><\/tr>/g){
-		$info{'allow_url_fopen'} = $1;  
-	}
-	if($content =~m/<tr><td class="e">allow_url_fopen<\/td><td class="v">(.+?)<\/td><td class="v">(.+)<\/td><\/tr>/g){
-		$info{'allow_url_fopen'} = $1;  
-	}
-	if($content =~m/<tr><td class="e">allow_url_include<\/td><td class="v">(.+?)<\/td><td class="v">(.+)<\/td><\/tr>/g){
-		$info{'allow_url_include'} = $1;  
-	}
-	if($content =~m/<tr><td class="e">register_globals<\/td><td class="v">(.+?)<\/td><td class="v">(.+)<\/td><\/tr>/g){
-		$info{'register_globals'} = $1;  
-	}
-	if($content =~m/<tr><td class="e">safe_mode<\/td><td class="v">(.+?)<\/td><td class="v">(.+)<\/td><\/tr>/g){
-		$info{'safe_mode'} = $1;  
-	}
-	if($content =~m/<tr><td class="e">safe_mode_exec_dir<\/td><td class="v">(.+?)<\/td><td class="v">(.+)<\/td><\/tr>/g){
-		$info{'safe_mode_exec_dir'} = $1;  
-	}
+		while($content =~m/<tr><td class="e">(.+?) <\/td><td class="v">(.+?)<\/td><\/tr>/g){
+			$info{$1} = $2;
+		}
 
+		while($content =~m/<tr><td class="e">(.+?)<\/td><td class="v">(.+?)<\/td><td class="v">(.+?)<\/td><\/tr>/g){
+			$info{$1} = $2;
+		}
+	}
 }
 
 
@@ -74,9 +41,20 @@ sub showResults(){
 	foreach my $w (keys %pages){
 		$func->write("| [+] phpinfo() page: ". $w . " " . $pages{$w} . "x times") if($pages{$w});
 	}
-	foreach my $key (keys %info){
-		$func->write("| \t$key: ". $info{$key} . "\n");
-	}
+	$func->write("| \tSystem: ". $info{'System'}) if($info{'System'});
+	$func->write("| \tPHP version: ". $info{'PHP Version'}) if($info{'PHP Version'});
+	$func->write("| \tApache Version: ". $info{'Apache Version'}) if($info{'Apache Version'});
+	$func->write("| \tServer Administrator: ". $info{'Server Administrator'}) if($info{'Server Administrator'});
+	$func->write("| \tUser/Group: ". $info{'User/Group'}) if($info{'User/Group'});
+	$func->write("| \tServer Root: ". $info{'Server Root'}) if($info{'Server Root'});
+	$func->write("| \tDOCUMENT_ROOT: ". $info{'DOCUMENT_ROOT'}) if($info{'DOCUMENT_ROOT'});
+	$func->write("| \tSCRIPT_FILENAME: ". $info{'SCRIPT_FILENAME'}) if($info{'SCRIPT_FILENAME'});
+	$func->write("| \tallow_url_fopen: ". $info{'allow_url_fopen'}) if($info{'allow_url_fopen'});
+	$func->write("| \tallow_url_include: ". $info{'allow_url_include'}) if($info{'allow_url_include'});
+	$func->write("| \tdisable_functions: ". $info{'disable_functions'}) if($info{'disable_functions'});
+	$func->write("| \tsafe_mode: ". $info{'safe_mode'}) if($info{'safe_mode'});
+	$func->write("| \tsafe_mode_exec_dir: ". $info{'safe_mode_exec_dir'}) if($info{'safe_mode_exec_dir'});
+	$func->write("| \tOpenSSL Library Version: ". $info{'OpenSSL Library Version'}) if($info{'OpenSSL Library Version'});
 }
 
 sub getResults(){
@@ -87,6 +65,7 @@ sub getResults(){
 sub clean(){
 	my $self = shift;
 	%pages = ();
+	%info = ();
 }
 
 
