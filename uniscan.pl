@@ -108,6 +108,7 @@ foreach my $url (@urllist){
 			$crawler->AddUrl($d);
 		}
 		@dir   = ();
+		$func->write("="x99);
 	}
 
 	if($args{w}) {
@@ -118,6 +119,7 @@ foreach my $url (@urllist){
 			$crawler->AddUrl($f);
 		}
 		@files = ();
+		$func->write("="x99);
 	}
 
 	if($args{e}){
@@ -125,6 +127,7 @@ foreach my $url (@urllist){
 		foreach my $f ($crawler->CheckRobots($url)){
 			$crawler->AddUrl($f);
 		}
+	  $func->write("="x99);
 	}
 
 # end of checks to feed the crawler
