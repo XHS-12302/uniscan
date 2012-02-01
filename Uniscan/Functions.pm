@@ -141,7 +141,7 @@ sub GetResponse(){
 
 		else{
 			my $req=HTTP::Request->new(GET=>$url1);
-			my $ua=LWP::UserAgent->new(agent => "Uniscan ".$conf{'version'}." http://www.uniscan.com.br/");
+			my $ua=LWP::UserAgent->new(agent => $conf{'user_agent'});
 			$ua->timeout($conf{'timeout'});
 			$ua->max_size($conf{'max_size'});
 			$ua->max_redirect(0);
@@ -348,15 +348,13 @@ sub help(){
 		"\t-s \tEnable Static checks\n".
 		"\t-r \tEnable Stress checks\n".
 		"\t-i \t<dork> Bing search\n".
-		"\t-o \t<dork> Google search\n".
 		"\n".
 		"usage: \n".
 		"[1] perl $0 -u http://www.example.com/ -qweds\n".
 		"[2] perl $0 -f sites.txt -bqweds\n".
 		"[3] perl $0 -i uniscan\n".
 		"[4] perl $0 -i \"ip:xxx.xxx.xxx.xxx\"\n".
-		"[5] perl $0 -o \"inurl:uniscan\"\n".
-		"[6] perl $0 -u https://www.example.com/ -r\n\n\n";
+		"[5] perl $0 -u https://www.example.com/ -r\n\n\n";
 	exit();
 }
 

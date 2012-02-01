@@ -1,6 +1,7 @@
 CFIDE/scripts/ajax/FCKeditor/
 gs/plugins/editors/fckeditor/
 editors/FCKeditor/
+professor/
 admin/FCKeditor/
 admin/scripts/fckeditor/
 manage/fckeditor/
@@ -2411,3 +2412,5 @@ doc_details/
 inicial/
 identidade/
 12/
+comments/
+convocacao/

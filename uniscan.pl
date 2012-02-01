@@ -5,7 +5,6 @@ use Uniscan::Crawler;
 use Uniscan::Functions;
 use Uniscan::Scan;
 use Uniscan::Bing;
-use Uniscan::Google;
 use Getopt::Std;
 
 my $func = Uniscan::Functions->new();
@@ -13,7 +12,7 @@ my @urllist = ( );
 my $scan;
 
 
-getopts('u:f:i:o:hbqwsder', \%args);
+getopts('u:f:i:hbqwsder', \%args);
 
 $func->banner();
 $func->CheckUpdate();
@@ -40,34 +39,12 @@ elsif($args{f}){
 	}
 	close(url_list);
 }
-elsif($args{i} && $args{o}){
-	$func->write("="x99);
-	$func->write("| Bing:");
-	my $bing = Uniscan::Bing->new();
-	$bing->search($args{i});
-	$func->write("| Site list saved in file sites.txt");
-	$func->write("="x99);
-	$func->write("| Google:");
-	my $google = Uniscan::Google->new();
-	$google->search($args{o});
-	$func->write("| Site list saved in file sites.txt");
-	$func->write("="x99);
-}
-
 elsif($args{i}){
 	$func->write("="x99);
 	$func->write("| Bing:");
 	my $bing = Uniscan::Bing->new();
 	$bing->search($args{i});
 	$func->write("| Site list saved in file sites.txt");
-}
-elsif($args{o}){
-	$func->write("="x99);
-	$func->write("| Google:");
-	my $google = Uniscan::Google->new();
-	$google->search($args{o});
-	$func->write("| Site list saved in file sites.txt");
-	$func->write("="x99);
 }
 else{
     $func->help();

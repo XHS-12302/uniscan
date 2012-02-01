@@ -1,4 +1,12 @@
-uniscan v5.2 date 11/11/2011
+Uniscan v5.2.1 date 01/02/2012
+
+- Bug fix on Functions.pm reported by Bl4ck5w4n :-)
+- Removed Google search
+- Added 4 new plug-ins
+- Added a script to download configuration files by LFI.
+
+
+Uniscan v5.2 date 11/11/2011
 
 - added new regex in crawler
 - Bug fix in plig-in SQL-injection

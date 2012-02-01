@@ -4,19 +4,19 @@ use Moose;
 use Uniscan::Functions;
 use Uniscan::Http;
 
+my $func = Uniscan::Functions->new();
+my $http = Uniscan::Http->new();
+our %inputs = ();
 
 sub search(){
 	my ($self, $search) = @_;
 
-	my $func = Uniscan::Functions->new();
-	my $http = Uniscan::Http->new();
-      
 	my $n = 0;
 	my $google = "";
 	my %sites = ();
 	$func->write("| [+] Google search for: $search");
-	for($n=0; $n<700; $n+=10){
-		$google = 'http://www.google.com/search?q='. $search .'&num=100&hl=pt-BR&safe=off&ie=UTF-8&start='. $n .'&sa=N';
+	for($n=0; $n<200; $n+=10){
+		$google = 'http://www.google.com.br/#q='. $search .'&hl=pt-BR&&start='. $n .'&fp=1';
 		my $response = $http->GET($google);
 		while ($response =~  m/<a href=\"https?:\/\/([^>\"]+)\" class=l>/g){
 			if ($1 !~ m/google|cache|translate/){
@@ -40,8 +40,5 @@ sub search(){
 	$func->write("| [+] Google search finished.");
 
 }
-
-
-
 
 1; 

