@@ -9,7 +9,7 @@ my $func = Uniscan::Functions->new();
 
 sub new {
 	my $class    = shift;
-	my $self     = {name => "Learning New Directories", version=>1.0};
+	my $self     = {name => "Learning New Directories", version=>1.1};
 	our $enabled  = 1;
 	return bless $self, $class;
 	our %dir = ();
@@ -21,6 +21,7 @@ sub execute(){
 	open(a, "<Directory");
 	my @line = <a>;
 	close(a);
+	my $x=0;
 
 	foreach my $d (@urls){
 		$d =~ s/https?:\/\///g;
@@ -30,7 +31,7 @@ sub execute(){
 		foreach my $d (@directories){
 			$d =~ s/\///g;
 			$d .= '/';
-			if(($d =~ /^\w+\/$/) && (length($d)>2) && (length($d)<15)){
+			if(($d =~ /^\w+\/$/) && (length($d)>2) && (length($d)<15) && $d !~/^\d+\/$/){
 				my $e = 0;
 				foreach my $l (@line){
 					chomp $l;
@@ -39,7 +40,7 @@ sub execute(){
 				if($e == 0){
 					$dirs{d} = 1;
 					push(@line, $d);
-					$func->write("| [+] New directory: $d");
+					$x++;
 				}
 			}
 		}
@@ -50,6 +51,7 @@ sub execute(){
 		print a "$l\n";
 	}
 	close(a);
+	$func->write("| [+] $x New directories added");
 }
 
 sub clean{
@@ -67,3 +69,4 @@ sub status(){
 
 
 1;
+

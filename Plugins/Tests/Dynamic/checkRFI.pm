@@ -12,7 +12,7 @@ use threads;
 
 sub new {
 	my $class    = shift;
-	my $self     = {name => "Remote File Include tests", version => 1.0};
+	my $self     = {name => "Remote File Include tests", version => 1.1};
 	our $enabled  = 1;
 	our %conf = ( );
 	%conf = $c->loadconf();
@@ -24,7 +24,7 @@ sub new {
 
 sub execute(){
 	my ($self, @urls) = @_;
-	our @RFI = ('http://www.uniscan.com.br/c.txt?');
+	our @RFI = ('http://uniscan.sourceforge.net/c.txt?');
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
 	$func->write("| RFI:");

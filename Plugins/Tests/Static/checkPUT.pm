@@ -8,7 +8,7 @@ use Uniscan::Functions;
 
 sub new {
     my $class    = shift;
-    my $self     = {name => "PUT method test", version => 1.1};
+    my $self     = {name => "PUT method test", version => 1.2};
 	our $enabled  = 1;
     return bless $self, $class;
 }
@@ -19,7 +19,7 @@ sub execute(){
 
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| Test PUT mothod:");
+	$func->write("| Test PUT method:");
     &CheckPut($url);
 	}
 
@@ -50,3 +50,4 @@ sub clean(){
 }
 
 1;
+

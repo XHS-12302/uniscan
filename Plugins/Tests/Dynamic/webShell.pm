@@ -17,7 +17,7 @@ my $http = Uniscan::Http->new();
 
 sub new {
 	my $class    = shift;
-	my $self     = {name => "Web Shell Finder", version=>1.1};
+	my $self     = {name => "Web Shell Finder", version=>1.2};
 	our $enabled  = 1;
 	our %conf = ( );
 	%conf = $c->loadconf();
@@ -29,6 +29,9 @@ sub new {
 sub execute(){
 	my ($self,@urls) = @_;
 	my %checks = ();
+	$func->write("|"." "x99);
+	$func->write("|"." "x99);
+	$func->write("| Web Shell Finder:");
 	my $protocol;
 	my @check;
 	my @files = (
