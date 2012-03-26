@@ -1,4 +1,10 @@
-Uniscan v5.2.1 date 01/02/2012
+Uniscan v5.4 date 26/03/2012
+
+- Crawler improved.
+- 4 plug-ins updated.
+
+
+Uniscan v5.3 date 01/02/2012
 
 - Bug fix on Functions.pm reported by Bl4ck5w4n :-)
 - Removed Google search

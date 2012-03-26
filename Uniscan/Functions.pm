@@ -371,7 +371,7 @@ sub help(){
 
 sub banner(){
 	my $self = shift;
-	&write("a", "###############################\n# Uniscan project             #\n# http://www.uniscan.com.br/  #\n###############################\nV. ". $conf{'version'} ."\n\n");
+	&write("a", "####################################\n# Uniscan project                  #\n# http://uniscan.sourceforge.net/  #\n####################################\nV. ". $conf{'version'} ."\n\n");
 }
 
 
@@ -397,11 +397,11 @@ sub date{
 sub CheckUpdate(){
 	my $self = shift;
 	my $h = Uniscan::Http->new();
-	my $response = $h->GET("http://www.uniscan.com.br/version.txt");
+	my $response = $h->GET("http://uniscan.sourceforge.net/version.txt");
 	chomp $response;
 	if($response != $conf{'version'}){
 		&write("self", "New version $response is avaliable");
-		&write("self", "More details in http://www.uniscan.com.br/\n\n");
+		&write("self", "More details in http://uniscan.sourceforge.net/\n\n");
 	}
 
 }

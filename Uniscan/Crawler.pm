@@ -50,6 +50,22 @@ sub get_input(){
 			push(@input, $1);
 		}
 	}
+
+	while ($content =~  m/<select(.+?)>/gi){
+		my $inp = $1;
+		if($inp =~ /name/i){
+			$inp =~ m/name *= *"(.+?)"/gi;
+			push(@input, $1);
+		}
+	}
+
+	while ($content =~  m/<textarea(.+?)>/gi){
+		my $inp = $1;
+		if($inp =~ /name/i){
+			$inp =~ m/name *= *"(.+?)"/gi;
+			push(@input, $1);
+		}
+	}
 	return @input;
 }
 
@@ -108,7 +124,7 @@ sub add_form(){
 		{
 			$cont =~ m/action *= *["'](.+?)["']/gi;
 			my $action = $1;
-			return if(!$action);
+			$action = $site if(!$action);
 			if($action =~ /^\//){
 				$action = $func->get_url($site) . $action;
 			}
@@ -131,7 +147,7 @@ sub add_form(){
 			}
 			$cont =~ m/method *= *"(.+?)"/gi;
 			my $method = $1;
-			return if(!$method);
+			$method = "post" if(!$method);
 
 			my @inputs = &get_input($cont);
 
@@ -361,6 +377,11 @@ sub start(){
 	while($q->pending()){
 		$q->dequeue;
 	}
+
+	if($reqs >= $conf{'max_reqs'}){
+		$func->write("| [+] Max Requests: " . $conf{'max_reqs'} . "");
+	}
+
 	
 # crawler end
 
