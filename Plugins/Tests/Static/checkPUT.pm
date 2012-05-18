@@ -20,6 +20,7 @@ sub execute(){
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
 	$func->write("| Test PUT method:");
+	$func->writeHTMLItem("PUT Method Test:<br>");
     &CheckPut($url);
 	}
 
@@ -33,7 +34,9 @@ sub CheckPut(){
 		$vulnerable++;
 		$func->write("="x100);
 		$func->write("| PUT method is enabled");
+		$func->writeHTMLValue("PUT method is enabled");
 		$func->write("| [+] Vul[$vulnerable]: $url/uniscan.txt");
+		$func->writeHTMLValue("$url/uniscan.txt");
 		$func->write("="x100);
 	}
 }

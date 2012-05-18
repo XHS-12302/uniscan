@@ -51,7 +51,9 @@ sub execute(){
 		print a "$l\n";
 	}
 	close(a);
+	$func->writeHTMLItem("Learning New Directories: ");
 	$func->write("| [+] $x New directories added");
+	$func->writeHTMLValue("$x New directories added.");
 }
 
 sub clean{

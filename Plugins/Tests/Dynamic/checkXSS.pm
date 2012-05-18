@@ -51,6 +51,7 @@ sub execute(){
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
 	$func->write("| XSS:");
+	$func->writeHTMLItem("Cross-Site Scripting (XSS):<br>");
 	&ScanXSSCrawler(@urls);	
 	&ScanXSSCrawlerPost(@urls);
 }
@@ -85,6 +86,9 @@ sub TestXSS(){
 		if($resp =~ m/<[\w|\s|\t|\n|\r|'|"|\?|\[|\]|\(|\)|\*|&|%|\$|#|@|!|\|\/|,|\.|;|:|\^|~|\}|\{|\+|\-|=|_]+>[_|=|\w|\s|\t|\n|\r|'|"|\?|\[|\]|\(|\)|\*|&|%|\$|#|@|!|\|\/|,|\.|;|:|\^|~|\}|\{|\+|\-]*(<script>alert\('XSS'\)<\/script>|<XSS>|<IMG SRC=\"javascript:alert\('XSS'\);\">|<IMG SRC=javascript:alert\(&quot;XSS&quot;\)>|<IMG SRC=javascript:alert\(String.fromCharCode\(88,83,83\)\)>|<IMG SRC=javascript:alert('XSS')>|<IMG SRC=\"javascript:alert\('XSS'\)\">|<LINK REL=\"stylesheet\" HREF=\"javascript:alert\('XSS'\);\">|<IMG SRC='vbscript:msgbox\(\"XSS\"\)'>|<META HTTP-EQUIV=\"refresh\" CONTENT=\"0; URL=http:\/\/;URL=javascript:alert\('XSS'\);\">|<DIV STYLE=\"background-image: url\(javascript:alert\('XSS'\)\)\">|<body onload=\"javascript:alert\('XSS'\)\"><\/body>|<table background=\"javascript:alert\('XSS'\)\"><\/table>).*</i){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [XSS] $test               ");
+			$test =~s/</&lt;/g;
+			$test =~s/>/&gt;/g;
+			$func->writeHTMLValue($test);
 		}
 		$resp = 0;
 	}
@@ -101,6 +105,9 @@ sub TestXSSPost(){
 		if($resp =~ m/<[\w|\s|\t|\n|\r|'|"|\?|\[|\]|\(|\)|\*|&|%|\$|#|@|!|\|\/|,|\.|;|:|\^|~|\}|\{|\+|\-|=|_]+>[_|=|\w|\s|\t|\n|\r|'|"|\?|\[|\]|\(|\)|\*|&|%|\$|#|@|!|\|\/|,|\.|;|:|\^|~|\}|\{|\+|\-]*(<script>alert\('XSS'\)<\/script>|<XSS>|<IMG SRC=\"javascript:alert\('XSS'\);\">|<IMG SRC=javascript:alert\(&quot;XSS&quot;\)>|<IMG SRC=javascript:alert\(String.fromCharCode\(88,83,83\)\)>|<IMG SRC=javascript:alert('XSS')>|<IMG SRC=\"javascript:alert\('XSS'\)\">|<LINK REL=\"stylesheet\" HREF=\"javascript:alert\('XSS'\);\">|<IMG SRC='vbscript:msgbox\(\"XSS\"\)'>|<META HTTP-EQUIV=\"refresh\" CONTENT=\"0; URL=http:\/\/;URL=javascript:alert\('XSS'\);\">|<DIV STYLE=\"background-image: url\(javascript:alert\('XSS'\)\)\">|<body onload=\"javascript:alert\('XSS'\)\"><\/body>|<table background=\"javascript:alert\('XSS'\)\"><\/table>).*</i){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [XSS] $url               \n| Post data: $data               ");
+			$data =~s/</&lt;/g;
+			$data =~s/>/&gt;/g;
+			$func->writeHTMLValue($url."<br>Post data: $data");
 		}
 		$resp = 0;
 	}

@@ -23,11 +23,13 @@ sub execute(){
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
 	$func->write("| Mini Stress Test:");
+	$func->writeHTMLItem("Mini Stress Test:<br>");
 	$time = time() + ($minuts * 60);
 
 	&threadnize("miniStress", $url);
 	$func->write("| Mini Stress Test End.");
-	}
+	$func->writeHTMLValue("Mini Stress Test End.");
+}
 
 
 sub threadnize(){
@@ -86,7 +88,7 @@ sub GET(){
 	my $url1 = shift;
 	return if(!$url1);
 	my $req = HTTP::Request->new(GET=>$url1);
-	my $ua	= LWP::UserAgent->new(agent => "Uniscan Stress test http://www.uniscan.com.br/");
+	my $ua	= LWP::UserAgent->new(agent => $conf{'user_agent'});
 	$ua->timeout(10);
 	$ua->max_size(512);
 	$ua->protocols_allowed( [ 'http'] );

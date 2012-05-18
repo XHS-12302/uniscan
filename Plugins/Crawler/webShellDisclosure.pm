@@ -17,6 +17,7 @@ my @wb = (	"c99shell<\/title>",
 		"execute command: <input type=\"text\" name=\"c\">",
 		"Execute Shell Command",
 		"r57shell<\/title>",
+		"<title>r57Shell",
 		"heroes1412",
 		"MyShell",
 		"PHP Shell",
@@ -65,8 +66,10 @@ sub execute {
 sub showResults(){
 	my $self = shift;
 	$func->write("|\n| Web Backdoors:");
+	$func->writeHTMLItem("Web Backdoors:<br>");
 	foreach my $w (keys %shells){
 		$func->write("| [+] Possible Backdoor: ". $w . " " . $shell{$w} . "x times") if($shells{$w});
+		$func->writeHTMLValue("Possible Backdoor: ". $w);
 	}
 }
 

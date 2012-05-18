@@ -13,7 +13,7 @@ sub new {
 }
 
 sub execute {
-    my $self = shift;
+	my $self = shift;
 	my $url = shift;
 	my $content = shift;
 	my @codes = ('<\?php', '#include <', '#!\/usr', '#!\/bin', 'import java\.', 'public class .+\{', '<\%.+\%>', '<asp:', 'package\s.+\;.*');
@@ -30,8 +30,10 @@ sub execute {
 sub showResults(){
 	my $self = shift;
 	$func->write("|\n| Source Code:");
+	$func->writeHTMLItem("Source Code Disclosure:<br>");
 	foreach my $url (%source){
 		$func->write("| [+] Source Code Found: ". $url . " " . $source{$url} . "x times") if($source{$url});
+		$func->writeHTMLValue("Source Code Found: ". $url) if($source{$url});
 	}
 }
 

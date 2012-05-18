@@ -63,6 +63,7 @@ sub execute(){
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
 	$func->write("| RCE:");
+	$func->writeHTMLItem("Remote Command Execution:<br>");
 	&ScanRCECrawler(@urls);	
 	&ScanRCECrawlerPost(@urls);
 }
@@ -96,6 +97,7 @@ sub TestRCE(){
 		if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [RCE] $test               ");
+			$func->writeHTMLValue($test);
 		}
 		$resp = 0;
 	}
@@ -111,6 +113,7 @@ sub TestRCEPost(){
 		if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [RCE] $url               \n| Post data: $data               ");
+			$func->writeHTMLValue($url."<br>Post data: $data");
 		}
 		$resp = 0;
 	}

@@ -32,6 +32,7 @@ sub execute(){
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
 	$func->write("| SQL-i:");
+	$func->writeHTMLItem("SQL Injection:<br>");
 	&ScanSQLCrawler(@urls);	
 	&ScanSQLCrawlerPost(@urls);
 }
@@ -64,6 +65,7 @@ sub TestSQL(){
 		if($resp =~/You have an error in your SQL syntax|Microsoft OLE DB Provider for ODBC Drivers|Supplied argument is not a valid .* result|Unclosed quotation mark after the character string/){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [SQL-i] $test               ");
+			$func->writeHTMLValue($test);
 		}
 		$resp = 0;
 	}
@@ -79,6 +81,7 @@ sub TestSQLPost(){
 		if($resp =~/You have an error in your SQL syntax|Microsoft OLE DB Provider for ODBC Drivers|Supplied argument is not a valid .* result|Unclosed quotation mark after the character string/){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [SQL] $url               \n| Post data: $data               ");
+			$func->writeHTMLValue($url."<br>Post data: $data");
 		}
 		$resp = 0;
 	}

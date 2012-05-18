@@ -28,6 +28,7 @@ sub execute(){
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
 	$func->write("| Blind SQL-i:");
+	$func->writeHTMLItem("Blind SQL Injection:<br>");
 	@urls = $func->remove(@urls) if(scalar(@urls));
 	&threadnize("CheckNoError", @urls) if(scalar(@urls));
 }
@@ -58,6 +59,8 @@ sub CheckNoError(){
 sub TestNoError(){
 	my ($url, $var) = @_;
 	my $url1 = $url;
+	$url1 = s/\)//g;
+	$url1 = s/\(//g;
 	$url1 =~ s/$var/$var\+AND\+1=1/g;
 	my $url2 = $url;
 	$url2 =~ s/$var/$var\+AND\+1=2/g;
@@ -79,7 +82,8 @@ sub TestNoError(){
 
 	if($r5 =~/$keyword/ && $key == 1 && $r5 !~/<b>Warning<\/b>.+\[<a href='function/ && $r4 !~/\Q$keyword\E/){
 		$vulnerable++;
-		$func->write("| [+] Vul[$vulnerable] [Blind SQL-i]: $url1               ");
+		$func->write("| [+] Vul[$vulnerable] [Blind SQL-i]: $url1     ");
+		$func->writeHTMLValue($url1);
 	}
 	($r1, $r2, $r4, $r5, @w1, $keyword) = 0
 }

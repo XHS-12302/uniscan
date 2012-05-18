@@ -28,6 +28,7 @@ sub execute(){
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
 	$func->write("| Backup Files:");
+	$func->writeHTMLItem("Backup Files:<br>");
 	@urls = $func->remove(@urls) if(scalar(@urls));
 	$func->INotPage($urls[1]);
 	&threadnize("checkNoExist", @urls);
@@ -107,12 +108,8 @@ sub GetResponse(){
 			if($response){
 				if($response =~ $conf{'code'} && $pattern !~ m/$response->content/){
 					push(@list, $url1);
-					if(length($url1) < 99){
-						$func->write("| [+] CODE: " .$response."\t URL: $url1" . " "x(99 - length($url1)));
-					}
-					else {
-						$func->write("| [+] CODE: " .$response."\t URL: $url1");
-					}
+					$func->write("| [+] CODE: " .$response."\t URL: $url1");
+					$func->writeHTMLValue("CODE: " .$response." URL: $url1");
 				}
 			}
 			$response = 0;
@@ -121,7 +118,7 @@ sub GetResponse(){
 
 		else{
 			my $req=HTTP::Request->new(GET=>$url1);
-			my $ua=LWP::UserAgent->new(agent => "Uniscan ".$conf{'version'}." http://www.uniscan.com.br/");
+			my $ua=LWP::UserAgent->new(agent => $conf{'user_agent'} );
 			$ua->timeout($conf{'timeout'});
 			$ua->max_size($conf{'max_size'});
 			$ua->max_redirect(0);
@@ -134,12 +131,8 @@ sub GetResponse(){
 			if($response){
 				if($response->code =~ $conf{'code'} && $pattern !~ m/$response->content/){
 					push(@list, $url1);
-					if(length($url1) < 99){
-						$func->write("| [+] CODE: " .$response->code."\t URL: $url1" . " "x(99 - length($url1)));
-					}
-					else {
-						$func->write("| [+] CODE: " .$response->code."\t URL: $url1");
-					}
+					$func->write("| [+] CODE: " .$response->code."\t URL: $url1");
+					$func->writeHTMLValue("CODE: " .$response->code." URL: $url1");
 				}
 			}
 			$req = 0;
@@ -195,7 +188,7 @@ sub checkFile(){
 		use LWP::UserAgent;
          
         	my $req=HTTP::Request->new(GET=>$url1);
-        	my $ua=LWP::UserAgent->new(agent => "Uniscan ".$conf{'version'}." http://www.uniscan.com.br/");
+        	my $ua=LWP::UserAgent->new(agent => $conf{'user_agent'});
         	$ua->timeout($conf{'timeout'});
         	$ua->max_size($conf{'max_size'});
                 $ua->max_redirect(0);

@@ -17,7 +17,7 @@ my $http = Uniscan::Http->new();
 
 sub new {
 	my $class    = shift;
-	my $self     = {name => "Web Shell Finder", version=>1.2};
+	my $self     = {name => "Web Shell Finder", version=>1.3};
 	our $enabled  = 1;
 	our %conf = ( );
 	%conf = $c->loadconf();
@@ -32,6 +32,7 @@ sub execute(){
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
 	$func->write("| Web Shell Finder:");
+	$func->writeHTMLItem("Web Shell Finder:<br>");
 	my $protocol;
 	my @check;
 	my @files = (
@@ -49,7 +50,6 @@ sub execute(){
 		"r.php",
 		"s.php",
 		"mys.php",
-		"phpshell.php",
 		"ps.php",
 		"i.php",
 		"rem_view.php",
@@ -74,6 +74,7 @@ sub execute(){
 		"phpterm.php"
 	);
 
+
 	foreach my $d (@urls){
 		$protocol = 'http://' if($d =~/^http:\/\//);
 		$protocol = 'https://' if($d =~/^https:\/\//);
@@ -85,7 +86,7 @@ sub execute(){
 				my $u = $protocol . $d . '/' . $f;
 				if(!$checks{$u}){
 					$checks{$u} = 1;
-					push(@check, $u);
+					push(@check, $u) if($u !~/search|procurar|procura|encontrar|find/i);
 				 }
 			}
 		}
@@ -119,6 +120,7 @@ sub findShell(){
 		"execute command: <input type=\"text\" name=\"c\">",
 		"Execute Shell Command",
 		"r57shell<\/title>",
+		"<title>r57Shell",
 		"heroes1412",
 		"MyShell",
 		"PHP Shell",
@@ -150,6 +152,7 @@ sub findShell(){
 		foreach my $mat (@matches){
 			if($result =~ m/$mat/gi){
 				$func->write("| [+] Possible WebShell: $url1");
+				$func->writeHTMLValue("Possible WebShell: $url1");
 			}
 		}
 	}

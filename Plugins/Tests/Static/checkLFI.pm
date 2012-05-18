@@ -28,6 +28,7 @@ sub execute(){
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
 	$func->write("| LFI:");
+	$func->writeHTMLItem("Local File Include:<br>");
     &ScanStaticLFI($url);
 	}
 
@@ -95,6 +96,7 @@ my ($resp, $test) = 0;
 		if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [LFI] $test");
+			$func->writeHTMLValue($test);
 		}
 		$resp = 0;
 	}

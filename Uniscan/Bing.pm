@@ -15,6 +15,7 @@ sub search(){
 	my ($bing, $response) = "";
 	my %sites = ();
 	$func->write("| [+] Bing search for: $search");
+	$func->writeHTMLValue("Bing search for: $search");
 	for($x=0; $x <= $y; $x+=10){
 		$bing = 'http://www.bing.com/search?q='.$search.'&first='.$x.'&FORM=PORE';
 		$response = $http->GET($bing);
@@ -37,7 +38,9 @@ sub search(){
 	}
 	close($file);
 	$func->write("| [+] Bing returns $i sites.");
+	$func->writeHTMLValue("Bing returns $i sites.");
 	$func->write("| [+] Bing search finished.");
+	$func->writeHTMLValue("Bing search finished.");
 }
 
 

@@ -30,8 +30,11 @@ sub execute {
 sub showResults(){
 	my $self = shift;
 	$func->write("|\n| File Upload Forms:");
+	$func->writeHTMLItem("File Upload Forms:<br>");
 	foreach my $url (%upload){
 		$func->write("| [+] Upload Form Found: ". $url . " " . $upload{$url} . "x times") if($upload{$url});
+		$func->writeHTMLValue("Upload Form Found: ". $url) if($upload{$url});
+		
 	}
 }
 

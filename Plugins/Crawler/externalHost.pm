@@ -1,12 +1,13 @@
 package Plugins::Crawler::externalHost;
 
 use Uniscan::Functions;
+use URI;
 
 	my $func = Uniscan::Functions->new();
 
 sub new {
     my $class    = shift;
-    my $self     = {name => "External Host Detect", version => 1.1};
+    my $self     = {name => "External Host Detect", version => 1.2};
 	our %external : shared = ();
 	our $enabled = 1;
     return bless $self, $class;
@@ -16,6 +17,7 @@ sub execute {
     my $self = shift;
 	my $url = shift;
 	my $content = shift;
+    my $url_uri = &host($url);
 	$url = $func->get_url($url);
 	my @ERs = (	"href=\"(.+)\"", 
 				"href='(.+)'", 
@@ -33,7 +35,9 @@ sub execute {
 			next if($link =~/[\s"']/);
 			$link = &get_url($link);
 			if($url ne $link){
-				$external{$link}++ if($link);
+                if($link !~ /$url_uri/){
+					$external{$link}++ if($link);
+ 			    }
 			}
 		}
 	}
@@ -45,8 +49,10 @@ sub execute {
 sub showResults(){
 	my $self = shift;
 	$func->write("|\n| External hosts:");
+	$func->writeHTMLItem("External hosts:<br>");
 	foreach my $url (%external){
 		$func->write("| [+] External Host Found: ". $url . " " . $external{$url} . "x times") if($external{$url});
+		$func->writeHTMLValue("External Host Found: ". $url) if($external{$url});
 	}
 }
 
@@ -77,6 +83,29 @@ sub get_url(){
 		$url =  substr($url, 0, index($url, '/')) if($url =~/\//);
 		return "https://" . $url;
 	}
+}
+
+sub write_vul(){
+	my ($filtxt, @content) = @_;
+	open(my $a, ">>$filtxt") or die "$!\n";
+	foreach(@content){
+		print $a "$_\n";
+	}
+	close($a);
+}
+
+##############################################
+#  Function host
+#  this function return the domain of a url
+#
+#  Param: a $url
+#  Return: $domain of url
+##############################################
+
+sub host(){
+  	my $h = shift;
+  	my $url1 = URI->new( $h || return -1 );
+  	return $url1->host();
 }
 
 

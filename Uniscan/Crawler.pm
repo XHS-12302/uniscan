@@ -9,6 +9,7 @@ use strict;
 use Uniscan::Configure;
 use Uniscan::Functions;
 use Uniscan::Factory;
+use URI;
 
 
 our %files	: shared = ( );
@@ -200,15 +201,16 @@ sub get_urls(){
 	my $base = shift; 
 	if($base !~ /\/\/$/){
 		my @lst = ();
-		my @ERs = (	"href=\"(.+)\"", 
-				"href='(.+)'", 
+		my @ERs = (	"href=\"(.+?)\"", 
+				"href='(.+?)'", 
 				"href=(.+?)>", 
 				"location.href='(.+)'",
 				"window\.open\('(.+?)'(,'')*\)",
 				"src='(.+)'",
 				"src=\"(.+)\"",
 				"location.href=\"(.+)\"", 
-				"<meta.*content=\"?.*;URL=(.+)\"?.*?>"
+				"<meta.*content=\"?.*;URL=(.+)\"?.*?>",
+				"<meta.+content=\".+; url=(.+)\">"
 			);
 				
 		my $h = Uniscan::Http->new();
@@ -221,10 +223,10 @@ sub get_urls(){
 		else{
 			$result = $h->GET($base);
 		}
-		return "a" if(!$result);
+		return $url."a" if(!$result);
 		return if($result =~/\Q$pat\E/);
 		if($result){
-
+		my @lines = split('\n', $result);
 		# plugins start
 			foreach my $p (@plugins){
 				$p->execute($base, $result) if($p->status() == 1);
@@ -236,16 +238,19 @@ sub get_urls(){
 			}
 
 			chomp($result);
+			foreach my $line (@lines){
 			foreach my $er (@ERs){
-				while ($result =~  m/$er/gi)
+				while ($line =~  m/$er/gi)
 				{
 					my $link = $1;
+					
 					if ($link =~/"/){
 						$link = substr($link,0,index($link, '"'));
 					}
 					if ($link =~/'/){
 						$link = substr($link,0,index($link, "'"));
 					}
+					
 				
 					if($link !~/^https?:\/\// && $link !~/https?:\/\// && $link !~/:/){
 						if($link =~/^\//){
@@ -289,23 +294,65 @@ sub get_urls(){
 					
 					}
 					chomp $link;
+					
 					$link =~s/&amp;/&/g;
 					$link =~ s/\.\///g; 
 					$link =~ s/ //g;
-					if($link =~/^https?:\/\// && $link =~/^$url/ && $link !~/#|javascript:|mailto:|\{|\}|function\(|;/i){
+
+                    my $url_temp = &host($url);  
+					if($link =~/^https?:\/\// && $link =~/$url_temp/){
+                        my $linktmp = $link;
+                        my $urltmp = $url;
+                        $urltmp =~ s/\/$//g;
+						if($linktmp =~ /^https/){
+							substr($urltmp,0,8) = "";
+							my $pos = index($linktmp, '/');
+							my $path = substr($linktmp, $pos, length($linktmp));
+                            $link = $urltmp. $path;
+                        }
+						elsif($linktmp =~ /^http/){
+							substr($linktmp,0,7) = "";
+							my $pos = index($linktmp, '/');
+							my $path = substr($linktmp, $pos, length($linktmp));
+							$link = $urltmp . $path;
+                        }
+                                                                                   
+				    }
+					
+					if($link =~/^https?:\/\// && $link =~/^$url/ && $link !~/https\%3A\%2F\%2F|http\%3A\%2F\%2F|#|javascript:|mailto:|\{|\}|function\(|;/i){
 						my $fil = $func->get_file($link);
 						my $ext = &get_extension($fil);
+						
 						if($conf{extensions} !~/\Q$ext\E/){
 							$files{$fil}++;
 							if($files{$fil} <= $conf{'variation'}){
 								push (@lst,$link);
 							}
-							
+						}
+						my $l = $link;
+						my $proto = 0;
+						if($l =~/^http:\/\//){
+							$proto = 7;
+						}
+						else{
+							$proto = 8;
+						}
+						$l =~ s/https?:\/\///g;
+						my $pb = index($l, '/') + $proto+1;
+						my $ub = 2000;
+						while($ub > $pb){
+							$ub = rindex($link, '/');
+							$link = substr($link, 0, $ub);
+							if(!$files{$link}){
+								push(@lst, $link);
+								$files{$link} = 1;
+							}
 						}
 						
 					}
 				}
 			}
+		}
 		}
 		return @lst;
 	}
@@ -332,6 +379,7 @@ sub crawling(){
 				$q->enqueue($t);
 				$u++;
 				$urls{$t} = 1;
+			        #$func->write("| ".$t);
 			}
 		}
 		printf("\r| [*] Crawling: [%d - %d]\r", $reqs, $u);
@@ -379,13 +427,17 @@ sub start(){
 	}
 
 	if($reqs >= $conf{'max_reqs'}){
-		$func->write("| [+] Max Requests: " . $conf{'max_reqs'} . "");
+		$func->write("| [+] Max Requests: " . $conf{'max_reqs'} . "             ");
+		$func->writeHTMLItem("Max Requests: ");
+		$func->writeHTMLValue($conf{'max_reqs'});
 	}
 
 	
 # crawler end
 
 	$func->write("| [+] Crawling finished, ". scalar(@list) ." URL's found!");
+	$func->writeHTMLItem("Crawling finished, found: ");
+	$func->writeHTMLValue(scalar(@list) . " URL's");
 # show plugins results
 	foreach my $plug (@plugins){
 		$plug->showResults()  if($plug->status() == 1);
@@ -432,6 +484,7 @@ sub CheckRobots(){
 			if($dir){  
 			push(@found, $url.$dir) if($dir =~/^\//);
 		        $func->write("| [+] ".$dir);
+			$func->writeHTMLValue($dir);
 			}
 		}
 	}
@@ -492,11 +545,9 @@ sub loadPlugins(){
 
 }
 
-
-
-
-
-
-
-
+sub host(){
+  	my $h = shift;
+  	my $url1 = URI->new( $h || return -1 );
+  	return $url1->host();
+}
 1;

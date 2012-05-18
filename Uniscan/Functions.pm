@@ -11,7 +11,7 @@ use HTTP::Request;
 use LWP::UserAgent;
 use Uniscan::Configure;
 use strict;
-
+use URI;
 
 our %conf = ( );
 our $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
@@ -34,6 +34,8 @@ sub GetServerInfo(){
 	my ($self, $url) = @_;
 	my $http = Uniscan::Http->new();
 	my $response = $http->HEAD($url);
+	&writeHTMLItem("self", "Server Banner:") if($response->server);
+	&writeHTMLValue("self", $response->server) if($response->server);
 	&write('ae', "| Server: ". $response->server) if($response->server);	
 }
 
@@ -124,14 +126,12 @@ sub GetResponse(){
 			my $http = Uniscan::Http->new();
 			my $response = $http->GETS($url1);
 			if($response){
+				$response =~ s/\r|\n//g;
+				$url1 =~ s/\r|\n//g;
 				if($response =~ $conf{'code'} && $pattern !~ m/$response->content/){
 					push(@list, $url1);
-					if(length($url1) < 99){
-						&write('', "| [+] CODE: " .$response." URL: $url1" . " "x(99 - length($url1)));
-					}
-					else {
-						&write('', "| [+] CODE: " .$response." URL: $url1");
-					}
+					&write('', "| [+] CODE: " .$response." URL: $url1");
+					&writeHTMLValue('', "CODE: $response URL: $url1");
 				}
 			}
 			$http = 0;
@@ -152,14 +152,11 @@ sub GetResponse(){
 
 			my $response=$ua->request($req);
 			if($response){
+				$url1 =~ s/\r|\n//g;
 				if($response->code =~ $conf{'code'} && $pattern !~ m/$response->content/){
 					push(@list, $url1);
-					if(length($url1) < 99){
-						&write('', "| [+] CODE: " .$response->code."\t URL: $url1" . " "x(99 - length($url1)));
-					}
-					else {
-						&write('', "| [+] CODE: " .$response->code."\t URL: $url1");
-					}
+					&write('', "| [+] CODE: " .$response->code."\t URL: $url1");
+					&writeHTMLValue("", "CODE: " .$response->code." URL: $url1");
 				}
 			}
 			$req = 0;
@@ -186,11 +183,6 @@ sub write(){
 	open(my $log, ">>". $conf{'log_file'}) or die "$!\n";
 	print $log "$text\n";
 	close($log);
-
-	if(length($text) < 82){
-		$text .= " "x(82 - length($text));
-	}
-
 	print "$text\n";
 
 }
@@ -348,13 +340,17 @@ sub help(){
 		"\t-s \tEnable Static checks\n".
 		"\t-r \tEnable Stress checks\n".
 		"\t-i \t<dork> Bing search\n".
+		"\t-o \t<dork> Google search\n".
+		"\t-g \tWeb fingerprint\n".
+		"\t-j \tServer fingerprint\n".
 		"\n".
 		"usage: \n".
 		"[1] perl $0 -u http://www.example.com/ -qweds\n".
 		"[2] perl $0 -f sites.txt -bqweds\n".
 		"[3] perl $0 -i uniscan\n".
 		"[4] perl $0 -i \"ip:xxx.xxx.xxx.xxx\"\n".
-		"[5] perl $0 -u https://www.example.com/ -r\n\n\n";
+		"[5] perl $0 -o \"inurl:test\"\n".
+		"[6] perl $0 -u https://www.example.com/ -r\n\n\n";
 	exit();
 }
 
@@ -387,9 +383,15 @@ sub banner(){
 
 sub date{
 	my $self = shift;
+	my $c = shift;
 	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
 	$year += 1900;
 	$mon++;
+	&writeHTMLCategory("self", "SCAN TIME");
+	&writeHTMLItem("self", "Scan Started:") if($c == 0);
+	&writeHTMLItem("self", "Scan Finished:") if($c == 1);
+	&writeHTMLValue("$self", "$mday/$mon/$year $hour:$min:$sec");
+	&writeHTMLCategoryEnd();
 	return "$mday-$mon-$year $hour:$min:$sec";
 }
 
@@ -399,11 +401,12 @@ sub CheckUpdate(){
 	my $h = Uniscan::Http->new();
 	my $response = $h->GET("http://uniscan.sourceforge.net/version.txt");
 	chomp $response;
-	if($response != $conf{'version'}){
+	if($response != $conf{'version'} && $response =~ /^\d+\.\d+$/){
 		&write("self", "New version $response is avaliable");
 		&write("self", "More details in http://uniscan.sourceforge.net/\n\n");
+		update() if($conf{'autoupdate'} == 1);
+		
 	}
-
 }
 
 
@@ -421,9 +424,138 @@ sub DoLogin(){
 	}
 }
 
+sub CheckRedirect(){
+	my ($self, $url) = @_;
+	use LWP::UserAgent;
+	use HTTP::Headers;
+	my $ua = LWP::UserAgent->new;
+	my $request  = HTTP::Request->new( HEAD => $url);
+	my $response = $ua->request($request);
+	if ( $response->is_success and $response->previous ){
+		$url =~ /https?:\/\/(.+)\//;
+		my $u1 = $1;
+		$response->request->uri =~ /https?:\/\/(.+)\//;
+		my $u2 = $1;
+		$url =~ s/$u1/$u2/g;
+		&write("ae", "="x99);
+		&writeHTMLItem("self", "Redirect Detected:");
+		&writeHTMLValue("self",  $request->url ." redirected to " . $url);
+		&writeHTMLItem("self", "New target is:");
+		&writeHTMLValue("self",  $url);
+		&write("ae", "| [*] ". $request->url ." redirected to " . $url);
+		&write("ae", "| [*] New target is: $url");
+	}
+	return $url;
+}
+
+sub createHTML(){
+	open(my $html, ">$conf{'html_report'}");
+	print $html '	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+			<html xmlns="http://www.w3.org/1999/xhtml">
+			<head>
+			<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+			<meta http-equiv="refresh" content="10">
+			<title>Uniscan Report</title>
+			<link href="css.css" rel="stylesheet" />
+			</head>
+			<body id="div0">
+			';
+	close($html);	
+}
+
+sub createHTMLRedirect(){
+	my $file = shift;
+	open(my $html, ">$conf{'html_report'}");
+	print $html '	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+			<html xmlns="http://www.w3.org/1999/xhtml">
+			<head>
+			<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+			<meta http-equiv="refresh" content="0; url='. $file .'">
+			<title>Uniscan Report</title>
+			<link href="css.css" rel="stylesheet" />
+			</head>
+			<body id="div0">
+			';
+	close($html);	
+}
+
+sub writeHTMLCategory(){
+	my ($self, $content) = @_;
+	open(my $html, ">>$conf{'html_report'}");
+	print $html "<br><br><br><br><br><center>$content</center>\n<hr>\n";
+	close($html);
+}
+
+sub writeHTMLCategoryEnd(){
+	my ($self, $content) = @_;
+	open(my $html, ">>$conf{'html_report'}");
+	print $html "<hr>\n";
+	close($html);
+	
+}
+
+sub writeHTMLItem(){
+	my ($self, $item) = @_;
+	open(my $html, ">>$conf{'html_report'}");
+	print $html "<br>$item \n";
+	close($html);
+}
+
+sub writeHTMLValue(){
+	my ($self, $cont) = @_;
+	$cont =~s/\r|\n//g;	
+	open(my $html, ">>$conf{'html_report'}");
+	print $html "<font id=\"valor\">$cont</font><br>\n";
+	close($html);
+}
 
 
 
+sub writeHTMLEnd(){
+	my $self = shift;
+	open(my $html, "<$conf{'html_report'}");
+	my @con = <$html>;
+	close($html);
+	
+	my $content = "@con";
+	$content =~ s/<meta http-equiv="refresh" content="10">//g;
+	
+	open($html, ">$conf{'html_report'}");
+	print $html $content . "\n<hr></body></html>";
+	close($html);
+}
+
+sub MoveReport(){
+	my ($self, $url) = @_;
+	my $msg = $conf{'html_report'};
+	$url = &host($url);
+	$url .= ".html";
+	$msg =~ s/uniscan\.html/$url/g;
+	system("mv ". $conf{'html_report'} . " " . $msg);
+	&write(" ", "HTML report saved in: $msg");
+	&createHTMLRedirect($url);
+	
+}
+
+
+sub host(){
+  	my $h = shift;
+  	my $url1 = URI->new( $h || return -1 );
+  	return $url1->host();
+}
+
+
+sub update(){
+	#backup old version
+	system("rm -rf ../uniscan-old") if(-d '../uniscan-old');
+	system("mkdir ../uniscan-old") if(!-d '../uniscan-old');
+	system("cp -R * ../uniscan-old/") if(-d '../uniscan-old');
+	#download and overwrite files
+	system("git clone git://git.code.sf.net/p/uniscan/code uniscan-code");
+	system("cp -R uniscan-code/* .; rm -rf uniscan-code/") if(-d "uniscan-code");
+	&write("", "| [*] Uniscan has updated to newest version");
+	exit();
+}
 
 1;
 

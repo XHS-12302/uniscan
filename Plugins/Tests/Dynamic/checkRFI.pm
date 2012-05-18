@@ -28,6 +28,7 @@ sub execute(){
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
 	$func->write("| RFI:");
+	$func->writeHTMLItem("Remote File Include:<br>");
     &ScanRFICrawler(@urls);	
     &ScanRFICrawlerPost(@urls);
 }
@@ -63,7 +64,8 @@ my ($resp, $test) = 0;
 		$resp = $http->GET($test);
 		if($resp =~/$conf{'rfi_return'}/){
 			$vulnerable++;
-			$func->write("| [+] Vul[$vulnerable] [RFI] $test               ");
+			$func->write("| [+] Vul[$vulnerable] [RFI] $test  ");
+			$func->writeHTMLValue($test);
 		}
 		$resp = 0;
 	}
@@ -90,6 +92,7 @@ my ($resp, $test) = 0;
 		if($resp =~/$conf{'rfi_return'}/){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [RFI] $url               \n| Post data: $data               ");
+			$func->writeHTMLValue($url."<br>Post data: $data");
 		}
 		$resp = 0;
 	}

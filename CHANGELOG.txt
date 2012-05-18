@@ -1,4 +1,25 @@
-Uniscan v5.4 date 26/03/2012
+Uniscan v6.0 date 18/05/2012
+
+- Crawler improved (a lot bug fix).
+- Google seach back to Uniscan.
+- Added Web server information module.
+- Added Server information module.
+- Added simple Web client (index.php).
+- Added New Plugin "FCKeditor" for crawler.
+- Added New Plugin "FCKeditor" for dynamic tests.
+- Added New Plugin "PHP CGI Argument Injection" for dynamic tests.
+- Added Auto-update.
+- Added simple HTML report.
+- Added detection of redirection.
+- Added Simple TK GUI.
+- Improved plug-in Webshell finder (less false-positive)
+- Improved uniscan.pl, now uniscan.pl try detect if a host is responding before doing the scanning.
+- Find for Drupal, Joomla and Wordpress plugins when banner-grabbing detect on of this CMS.
+
+This release has a great help from Roberto Neves.
+
+
+Uniscan v5.4 date 02/04/2012
 
 - Crawler improved.
 - 4 plug-ins updated.

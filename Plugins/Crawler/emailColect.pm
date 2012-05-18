@@ -26,8 +26,10 @@ sub execute {
 sub showResults(){
 	my $self = shift;
 	$func->write("|\n| E-mails:");
+	$func->writeHTMLItem("E-mails:<br>");
 	foreach my $mail (%email){
 		$func->write("| [+] E-mail Found: ". $mail . " " . $email{$mail} . "x times") if($email{$mail});
+		$func->writeHTMLValue("E-mail Found: ". $mail) if($email{$mail});
 	}
 }
 

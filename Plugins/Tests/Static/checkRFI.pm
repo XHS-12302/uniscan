@@ -29,6 +29,7 @@ sub execute(){
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
 	$func->write("| RFI:");
+	$func->writeHTMLItem("Remote File Include:<br>");
     &ScanStaticRFI($url);
 	}
 
@@ -60,6 +61,7 @@ my ($resp, $test) = 0;
 		if($resp =~/$conf{'rfi_return'}/){
 			$vulnerable++;
 			$func->write("| [+] Vul[$vulnerable] [RFI] $test");
+			$func->writeHTMLValue($test);
 		}
 		$resp = 0;
 	}
