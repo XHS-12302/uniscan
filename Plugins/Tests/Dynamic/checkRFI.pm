@@ -9,15 +9,14 @@ use threads;
 	my $c = Uniscan::Configure->new(conffile => "uniscan.conf");
 	my $func = Uniscan::Functions->new();
 	my $http = Uniscan::Http->new();
+	my $q = new Thread::Queue;
 
 sub new {
 	my $class    = shift;
-	my $self     = {name => "Remote File Include tests", version => 1.1};
+	my $self     = {name => "Remote File Include tests", version => 1.2};
 	our $enabled  = 1;
 	our %conf = ( );
 	%conf = $c->loadconf();
-	our $q : shared = "";
-	our $vulnerable :shared = 0;
 	return bless $self, $class;
 }
 
@@ -27,7 +26,7 @@ sub execute(){
 	our @RFI = ('http://uniscan.sourceforge.net/c.txt?');
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| RFI:");
+	$func->write("| Remote File Include:");
 	$func->writeHTMLItem("Remote File Include:<br>");
     &ScanRFICrawler(@urls);	
     &ScanRFICrawlerPost(@urls);
@@ -36,7 +35,7 @@ sub execute(){
 
 sub clean{
 	my $self = shift;
-	$vulnerable = 0;
+
 }
 
 
@@ -55,20 +54,20 @@ sub ScanRFICrawlerPost(){
 }
 
 sub TestRFI(){
-
 my ($resp, $test) = 0;
-
-	while($q->pending){
+	while($q->pending > 0){
 		$test = $q->dequeue;
-		print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
+		next if(not defined $test);
+		next if($test =~/#/g);
+		print "[*] Remaining tests: ". $q->pending  ."       \r";
 		$resp = $http->GET($test);
 		if($resp =~/$conf{'rfi_return'}/){
-			$vulnerable++;
-			$func->write("| [+] Vul[$vulnerable] [RFI] $test  ");
+			$func->write("| [+] Vul [RFI] $test  ");
 			$func->writeHTMLValue($test);
 		}
 		$resp = 0;
 	}
+	$q->enqueue(undef);
 }
 
 
@@ -84,18 +83,20 @@ my ($resp, $test) = 0;
 sub TestRFIPost(){
 
 my ($resp, $test) = 0;
-	while($q->pending){
+	while($q->pending > 0){
 		$test = $q->dequeue;
+		next if(not defined $test);
+		next if($test !~/#/g);
 		my ($url, $data) = split('#', $test);
-		print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
+		print "[*] Remaining tests: ". $q->pending  ."       \r";
 		$resp = $http->POST($url, $data);
 		if($resp =~/$conf{'rfi_return'}/){
-			$vulnerable++;
-			$func->write("| [+] Vul[$vulnerable] [RFI] $url               \n| Post data: $data               ");
+			$func->write("| [+] Vul [RFI] $url               \n| Post data: $data               ");
 			$func->writeHTMLValue($url."<br>Post data: $data");
 		}
 		$resp = 0;
 	}
+	$q->enqueue(undef);
 }
 
 
@@ -183,27 +184,24 @@ sub GenerateTestsPost(){
 
 sub threadnize(){
 	my ($fun, @tests) = @_;
-	$q = 0;
-	$q = new Thread::Queue;
-	$tests[0] = 0;
 	foreach my $test (@tests){
 		$q->enqueue($test) if($test);
 	}
 
 	my $x=0;
+	my @threads = ();
 	while($q->pending() && $x <= $conf{'max_threads'}-1){
 		no strict 'refs';
-		threads->new(\&{$fun});
+		push @threads, threads->new(\&{$fun});
 		$x++;
 	}
 
-	my @threads = threads->list();
-        foreach my $running (@threads) {
+	sleep(2);
+	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
-        }
+		print "[*] Remaining tests: ". $q->pending  ."       \r";
+	}
 	@threads = ();
-	$q = 0;
 }
 
 

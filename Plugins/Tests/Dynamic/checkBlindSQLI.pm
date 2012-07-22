@@ -9,15 +9,14 @@ use threads;
 	my $c = Uniscan::Configure->new(conffile => "uniscan.conf");
 	my $func = Uniscan::Functions->new();
 	my $http = Uniscan::Http->new();
+	my $q = new Thread::Queue;
 
 sub new {
 	my $class    = shift;
-	my $self     = {name => "Blind SQL-injection tests", version => 1.0};
+	my $self     = {name => "Blind SQL-injection tests", version => 1.2};
 	our $enabled  = 1;
 	our %conf = ( );
 	%conf = $c->loadconf();
-	our $q : shared = "";
-	our $vulnerable :shared = 0;
 	return bless $self, $class;
 }
 
@@ -27,7 +26,7 @@ sub execute(){
 
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| Blind SQL-i:");
+	$func->write("| Blind SQL Injection:");
 	$func->writeHTMLItem("Blind SQL Injection:<br>");
 	@urls = $func->remove(@urls) if(scalar(@urls));
 	&threadnize("CheckNoError", @urls) if(scalar(@urls));
@@ -35,15 +34,16 @@ sub execute(){
 
 sub clean{
 	my $self = shift;
-	$vulnerable = 0;
 }
 
 
 sub CheckNoError(){
-	while($q->pending){
+	while($q->pending > 0){
 		my $url = $q->dequeue;
+		next if(not defined $url);
+		next if($url =~/\/\?S=A|\/\?N=D|\/\?S=D|\/\?D=A|\/\?N=A|\/\?M=D|\/\?M=A|\/\?D=D|\/\?D=A/g);
 		if($url !~/#/){
-			print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
+			print "[*] Remaining tests: ". $q->pending ."        \r";
 			if($url =~/\?/){
 				my ($url1, $vars) = split('\?', $url);
 				my @var = split('&', $vars);
@@ -53,39 +53,76 @@ sub CheckNoError(){
 			}
 		}
 	}
+	$q->enqueue(undef);
 }
 
 
 sub TestNoError(){
 	my ($url, $var) = @_;
+	$url =~s/&$var//g;
+	$url =~s/$var//g;
+	$url .= "&" . $var;
+	$url =~s/\?&/\?/g;
 	my $url1 = $url;
-	$url1 = s/\)//g;
-	$url1 = s/\(//g;
-	$url1 =~ s/$var/$var\+AND\+1=1/g;
 	my $url2 = $url;
+	my $url3 = $url;
+	my $url4 = $url;
+	$url1 =~ s/$var/$var\+AND\+1=1/g;
 	$url2 =~ s/$var/$var\+AND\+1=2/g;
 	my $r1 = $http->GET($url);
 	my $r2 = $http->GET($url);
+	next if(!$r1 or !$r2);
 	my $r4 = $http->GET($url2);
 	my $r5 = $http->GET($url1);
+	next if(!$r4 or !$r5);
+	$r1 =~ s/<script.+?<\/script>//gi;
+	$r2 =~ s/<script.+?<\/script>//gi;
+	$r1 =~s/<!DOCTYPE HTML PUBLIC ".+?">//gi;
+	$r2 =~s/<!DOCTYPE HTML PUBLIC ".+?">//gi;
+	
 	my @w1 = split(' ', $r1);
 	my $keyword = "";
 	my $key = 0;
 	foreach my $word (@w1){
-		if($r2 =~ m/\Q$word\E/ && $r4 !~m/\Q$word\E/ && length($word) > 5 && $word =~ m/^\w+$/g){
+		if($r2 =~ /\Q$word\E/g && $r4 !~ /\Q$word\E/g && length($word) > 5 && $word =~ /^\w+$/g){
 			if($key == 0){
 				$key =1;
 				$keyword = $word;
 			}
 		}
 	}
-
-	if($r5 =~/$keyword/ && $key == 1 && $r5 !~/<b>Warning<\/b>.+\[<a href='function/ && $r4 !~/\Q$keyword\E/){
-		$vulnerable++;
-		$func->write("| [+] Vul[$vulnerable] [Blind SQL-i]: $url1     ");
+	if($r5 =~/\Q$keyword\E/g && $key == 1 && $r5 !~/<b>Warning<\/b>/gi && $r4 !~/\Q$keyword\E/g){
+		$func->write("| [+] Vul [Blind SQL-i]: $url1     ");
+		$func->write("| [+] Keyword: $keyword");
 		$func->writeHTMLValue($url1);
+		$func->writeHTMLValue("Keyword: $keyword");
 	}
-	($r1, $r2, $r4, $r5, @w1, $keyword) = 0
+
+
+
+	################
+
+	$url3 =~s/$var/$var'\+AND\+'1'='1/g;
+	$url4 =~s/$var/$var'\+AND\+'1'='2/g;
+	my $r6 = $http->GET($url3);
+	my $r7 = $http->GET($url4);
+	next if(!$r6 or !$r7);
+	$key = 0;
+	foreach my $word (@w1){
+		if($r2 =~ m/\Q$word\E/g && $r7 !~m/\Q$word\E/g && length($word) > 5 && $word =~ m/^\w+$/g){
+			if($key == 0){
+				$key =1;
+				$keyword = $word;
+			}
+		}
+	}
+	if($r6 =~/\Q$keyword\E/g && $key == 1 && $r6 !~/<b>Warning<\/b>/gi && $r7 !~/\Q$keyword\E/){
+		$func->write("| [+] Vul [Blind SQL-i]: $url3     ");
+		$func->write("| [+] Keyword: $keyword");
+		$func->writeHTMLValue($url3);
+		$func->writeHTMLValue("Keyword: $keyword");
+	}
+	($r1, $r2, $r4, $r5, @w1, $r6, $r7, $keyword) = undef;
 }
 
 
@@ -96,27 +133,25 @@ sub status(){
 
  sub threadnize(){
 	my ($fun, @tests) = @_;
-	$q = 0;
-	$q = new Thread::Queue;
-	$tests[0] = 0;
 	foreach my $test (@tests){
 		$q->enqueue($test) if($test && $test =~/=/);
 	}
 
 	my $x=0;
+	my @threads = ();
 	while($q->pending() && $x <= $conf{'max_threads'}-1){
 		no strict 'refs';
-		threads->new(\&{$fun});
+		push @threads, threads->new(\&{$fun});
 		$x++;
 	}
 
-	my @threads = threads->list();
-        foreach my $running (@threads) {
+	sleep(2);
+
+	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
-        }
+		print "[*] Remaining tests: ". $q->pending ."        \r";
+	}
 	@threads = ();
-	$q = 0;
 }
 
 

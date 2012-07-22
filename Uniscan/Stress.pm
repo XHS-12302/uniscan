@@ -25,10 +25,10 @@ sub loadPlugins(){
 
 	
 sub run(){
-	my ($self, $url) = @_;
+	my ($self, @url) = @_;
 	# plugins start
 	foreach my $p (@plugins){
-		$p->execute($url) if($p->status() == 1);
+		$p->execute(@url) if($p->status() == 1);
 	}
 	# plugins end
 }

@@ -6,12 +6,12 @@ use Uniscan::Functions;
 
 my $func = Uniscan::Functions->new();
 
+	my %pages = ();
+	my %info = ();
 
 sub new {
 	my $class    = shift;
 	my $self     = {name => "phpinfo() Disclosure", version => 1.0};
-	our %pages : shared = ();
-	our %info  : shared = ();
 	our $enabled = 1;
 	return bless $self, $class;
 }

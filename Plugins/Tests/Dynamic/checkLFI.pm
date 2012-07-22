@@ -6,24 +6,23 @@ use Thread::Queue;
 use Uniscan::Http;
 use threads;
 
-	my $c = Uniscan::Configure->new(conffile => "uniscan.conf");
-	my $func = Uniscan::Functions->new();
-	my $http = Uniscan::Http->new();
+my $c = Uniscan::Configure->new(conffile => "uniscan.conf");
+my $func = Uniscan::Functions->new();
+my $http = Uniscan::Http->new();
+my $q = new Thread::Queue;
+
 
 sub new {
 	my $class    = shift;
-	my $self     = {name => "Local File Include tests", version => 1.0};
+	my $self     = {name => "Local File Include tests", version => 1.1};
 	our $enabled  = 1;
 	our %conf = ( );
 	%conf = $c->loadconf();
-	our $q : shared = "";
-	our $vulnerable :shared = 0;
 	return bless $self, $class;
 }
 
 sub clean{
 	my $self = shift;
-	$vulnerable = 0;
 }
 
 
@@ -77,7 +76,7 @@ sub execute(){
 				);
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| LFI:");
+	$func->write("| Local File Include:");
 	$func->writeHTMLItem("Local File Include:<br>");
 	&ScanLFICrawler(@urls);	
 	&ScanLFICrawlerPost(@urls);
@@ -179,27 +178,24 @@ sub urlencode {
 
 sub threadnize(){
 	my ($fun, @tests) = @_;
-	$q = 0;
-	$q = new Thread::Queue;
-	$tests[0] = 0;
 	foreach my $test (@tests){
 		$q->enqueue($test) if($test);
 	}
 
 	my $x=0;
+	my @threads = ();
 	while($q->pending() && $x <= $conf{'max_threads'}-1){
 		no strict 'refs';
-		threads->new(\&{$fun});
+		push @threads, threads->new(\&{$fun});
 		$x++;
 	}
 
-	my @threads = threads->list();
-        foreach my $running (@threads) {
+	sleep(2);
+	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
-        }
+		print "[*] Remaining tests: ". $q->pending ."       \r";
+	}
 	@threads = ();
-	$q = 0;
 }
 
 
@@ -235,17 +231,20 @@ sub ScanLFICrawlerPost(){
 sub TestLFI(){
 
 my ($resp, $test) = 0;
-	while($q->pending){
+	while($q->pending > 0){
 		$test = $q->dequeue;
-		print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
+		next if(not defined $test);
+		next if($test =~/#/g);
+		print "[*] Remaining tests: ". $q->pending ."       \r";
 		$resp = $http->GET($test);
 		if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
-			$vulnerable++;
-			$func->write("| [+] Vul[$vulnerable] [LFI] $test  ");
+			
+			$func->write("| [+] Vul [LFI] $test  ");
 			$func->writeHTMLValue($test);
 		}
 		$resp = 0;
 	}
+	$q->enqueue(undef);
 }
 
 
@@ -259,20 +258,22 @@ my ($resp, $test) = 0;
 ##############################################
 
 sub TestLFIPost(){
-	while($q->pending){
+	while($q->pending > 0){
 		my $test = $q->dequeue;
+		next if(not defined $test);
 		if($test =~ /#/){
 			my ($url, $data) = split('#', $test);
-			print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
+			print "[*] Remaining tests: ". $q->pending ."       \r";
 			my $resp = $http->POST($url, $data);
 			if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
-				$vulnerable++;
-				$func->write("| [+] Vul[$vulnerable] [LFI] $url               \n| Post data: $data               ");
+				
+				$func->write("| [+] Vul [LFI] $url               \n| Post data: $data               ");
 				$func->writeHTMLValue($url."<br>Post data: $data");
 			}
 			$resp = 0;
 		}
 	}
+	$q->enqueue(undef);
 }
 
 sub status(){

@@ -1,3 +1,20 @@
+Uniscan V6.1 date 27/07/2012
+
+- Added -w 4 on ping command of Server information module.
+- Small bugfix on crawler.
+- Bugfix on SQL injection plugin.
+- Bugfix on Blind SQL injection plugin.
+- Added a new test on Blind SQL injecion plugin.
+- Added option to show crawling ignored files.
+- Removed fews extensions of "find Backup files" plugin.
+- Added option to write all requests done by uniscan on requests.txt.
+- Improved FCKeditor plugin.
+- Improved checkBackup plugin.
+- Added new plugin for crawler: timthumb vulnerability.
+- Added new plugin for dynamic tests: timthumb vulnerability.
+- Removed a bug that crashed the threads.
+
+
 Uniscan v6.0 date 18/05/2012
 
 - Crawler improved (a lot bug fix).

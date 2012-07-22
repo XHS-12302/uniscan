@@ -9,7 +9,7 @@ use threads;
 my $c = Uniscan::Configure->new(conffile => "uniscan.conf");
 my $func = Uniscan::Functions->new();
 my $http = Uniscan::Http->new();
-
+my $q = new Thread::Queue;
 
 # this plug-in search for web shell files in each directory found by crawler.
 
@@ -21,7 +21,6 @@ sub new {
 	our $enabled  = 1;
 	our %conf = ( );
 	%conf = $c->loadconf();
-	our $q : shared = "";
 	return bless $self, $class;
 }
 
@@ -145,9 +144,11 @@ sub findShell(){
 		"<title>PHP\-Terminal"
 	);
 
-	while($q->pending()){
+	while($q->pending() > 0){
 		my $url1 = $q->dequeue;
-		print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
+		next if(not defined $url1);
+		next if($url1 =~/#/g);
+		print "[*] Remaining tests: ". $q->pending  ."       \r";
 		my $result = $http->GET($url1);
 		foreach my $mat (@matches){
 			if($result =~ m/$mat/gi){
@@ -156,28 +157,27 @@ sub findShell(){
 			}
 		}
 	}
+	$q->enqueue(undef);
 }
 
 sub threadnize(){
 	my @tests = @_;
-	$q = 0;
-	$q = new Thread::Queue;
 	foreach my $test (@tests){
 		$q->enqueue($test) if($test);
 	} 
 	my $x=0;
+	my @threads = ();
 	while($q->pending() && $x <= $conf{'max_threads'}-1){
-		threads->new(\&findShell);
+		push @threads, threads->new(\&findShell);
 		$x++;
 	}
 
-	my @threads = threads->list();
-        foreach my $running (@threads) {
+	sleep(2);
+	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
-        }
+		print "[*] Remaining tests: ". $q->pending  ."       \r";
+	}
 	@threads = ();
-	$q = 0;
 }
 
 

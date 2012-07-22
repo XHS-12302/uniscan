@@ -3,57 +3,61 @@ package Plugins::Stress::miniStress;
 use Uniscan::Functions;
 use Thread::Queue;
 use threads;
+use Uniscan::Http;
 
 my $func = Uniscan::Functions->new();
+my $q = new Thread::Queue;
+my $max_threads  = 50;
+my $time = 0;
 
 sub new {
     my $class    = shift;
-    my $self     = {name => "Mini Stress Test", version=>1.0};
+    my $self     = {name => "Mini Stress Test", version=>1.1};
 	our $enabled  = 1;
-	our $q : shared = "";
-	our $max_threads :shared = 50;
 	our $minuts = 1; 
-	our $time : shared = 0;
     return bless $self, $class;
 }
 
 
 sub execute(){
-	my ($self,$url) = @_;
+	my ($self,@url) = @_;
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
 	$func->write("| Mini Stress Test:");
 	$func->writeHTMLItem("Mini Stress Test:<br>");
+	#aqui busca url mais custosa e retorna pra $url
+	$url = &cost(@url);
+	sleep(10);
+	$func->write("| Using $url as target");
+	$func->writeHTMLValue("Using $url as target");
 	$time = time() + ($minuts * 60);
-
 	&threadnize("miniStress", $url);
-	$func->write("| Mini Stress Test End.");
+	$func->write("| Mini Stress Test End.". " "x30);
 	$func->writeHTMLValue("Mini Stress Test End.");
 }
 
 
 sub threadnize(){
 	my ($fun, $test) = @_;
-	$q = new Thread::Queue;
 	for(my $i=0; $i<$max_threads+$max_threads;$i++){
 		$q->enqueue($test);
 	}
 
 
 	my $x=0;
+	my @threads = ();
 	while($q->pending() && $x <= $max_threads){
 		no strict 'refs';
-		threads->new(\&{$fun});
+		push @threads, threads->new(\&{$fun});
 		sleep(20) if($q->pending() == 0);
 		$x++;
 	}
 
-	my @threads = threads->list();
-        foreach my $running (@threads) {
+	sleep(2);
+	foreach my $running (@threads) {
 		$running->join();
-        }
+	}
 	@threads = ();
-	$q = 0;
 }
 
 
@@ -66,23 +70,52 @@ sub status(){
 sub miniStress(){
 
 
-	while($q->pending){
-		print "| [*] Threads: ". scalar(threads->list()) ." Remaining time: ". ($time  - time())."s           \r";
+	while($q->pending > 0){
+		print "| [*]  Remaining time: ". ($time  - time())."s           \r";
 		if(($time  - time()) < 1 ){
-			while($q->pending){
+			while($q->pending > 0){
 				$q->dequeue;
 			}
 		return 1;
 		}
 	my $url = $q->dequeue;
+	next if(not defined $url);
 	$q->enqueue($url);
 	&GET($url);
 	}
+	$q->enqueue(undef);
 return 1;
 }
 
 
-
+sub cost(){
+    my @urls = @_;
+    my $target = "a";
+    my $cost = 0;
+    my $x = 0 ;
+    my $y = scalar(@urls);
+    my $http = Uniscan::Http->new();
+    $func->write("| Looking for best cost:");
+    $func->writeHTMLValue("Looking for best cost:");
+    foreach my $url (@urls){
+	$x++;
+	chomp $url;
+	print "| Looking[$x - $y]\r";
+	my $time1 = time();
+	my $ret = $http->GET($url);
+	my $time2 = time();
+	my $c = ($time2 - $time1);
+	if($c > $cost){
+	    $func->write("| Cost: [$c] $url");
+	    $func->writeHTMLValue("Cost: [$c] $url");
+	    $cost = $c;
+	    $target = $url;
+	}
+    }
+    return $target;
+    
+    
+}
 
 sub GET(){
 	my $url1 = shift;

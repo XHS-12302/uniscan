@@ -1,5 +1,26 @@
 #!/usr/bin/env perl
 
+#    Uniscan Web Vulnerability Scanner
+#    Copyright (C) 2012  Douglas Poerschke Rocha
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#    Development Team:
+#
+#	 Cicero Miguel Schons since version 6.1
+#	 Douglas Poerschke Rocha since version 1.0
+
+	
 use lib "./Uniscan";
 use Uniscan::Crawler;
 use Uniscan::Functions;
@@ -9,6 +30,7 @@ use Uniscan::Google;
 use Uniscan::FingerPrint;
 use Uniscan::FingerPrint_Server;
 use Uniscan::Configure;
+use Uniscan::Http;
 use Getopt::Std;
 
 my $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
@@ -16,7 +38,7 @@ my %conf = $cfg->loadconf();
 my $func = Uniscan::Functions->new();
 my @urllist = ( );
 my $scan;
-
+our @urls = ();
 $|++;
 
 getopts('u:f:i:o:hbqwsdergj', \%args);
@@ -33,59 +55,61 @@ if(!$args{u} && !$args{f} && !$args{i} && !$args{o}){
 }
 
 if($args{u}){
+	$args{u} = "http://" . $args{u} if($args{u} !~/^https?:\/\//);
+	$args{u} .= "/" if($args{u} !~/\/$/);
 	$func->check_url($args{u});
 	push(@urllist, $args{u});
 } 
 elsif($args{f}){
-	open(url_list, "<$args{f}") or die "$!\n";
-	while(<url_list>){
+	open(my $url_list, "<", "$args{f}") or die "$!\n";
+	while(<$url_list>){
 		my $line = $_;
 		chomp $line;
 		$func->check_url($line);
 		push(@urllist, $line);
 	}
-	close(url_list);
+	close($url_list);
 }
 elsif($args{i} && $args{o}){
 	$func->writeHTMLCategory("SEARCH ENGINE");
 	$func->write("="x99);
-  	$func->write("| Bing:");
+	$func->write("| Bing:");
 	$func->writeHTMLItem("Bing:<br>");
-  	my $bing = Uniscan::Bing->new();
-  	$bing->search($args{i});
-  	$func->write("| Site list saved in file sites.txt");
+	my $bing = Uniscan::Bing->new();
+	$bing->search($args{i});
+	$func->write("| Site list saved in file sites.txt");
 	$func->writeHTMLValue("Site list saved in file sites.txt");
-  	$func->write("="x99);
+	$func->write("="x99);
 	$func->writeHTMLItem("Google:<br>");
-  	$func->write("| Google:");
-  	my $google = Uniscan::Google->new();
-  	$google->search($args{o});
+	$func->write("| Google:");
+	my $google = Uniscan::Google->new();
+	$google->search($args{o});
 	$func->writeHTMLValue("Site list saved in file sites.txt");
-  	$func->write("| Site list saved in file sites.txt");
-  	$func->write("="x99);
+	$func->write("| Site list saved in file sites.txt");
+	$func->write("="x99);
 	$func->writeHTMLCategoryEnd();
 }
 elsif($args{i}){
 	$func->writeHTMLCategory("SEARCH ENGINE");
- 	$func->write("="x99);
-  	$func->write("| Bing:");
+	$func->write("="x99);
+	$func->write("| Bing:");
 	$func->writeHTMLItem("Bing Search:<br>");
-  	my $bing = Uniscan::Bing->new();
-  	$bing->search($args{i});
+	my $bing = Uniscan::Bing->new();
+	$bing->search($args{i});
 	$func->writeHTMLValue("Site list saved in file sites.txt");
-  	$func->write("| Site list saved in file sites.txt");
+	$func->write("| Site list saved in file sites.txt");
 	$func->writeHTMLCategoryEnd();
 }
 elsif($args{o}){
 	$func->writeHTMLCategory("SEARCH ENGINE");
-  	$func->write("="x99);
+	$func->write("="x99);
 	$func->writeHTMLItem("Google Search:<br>");
-  	$func->write("| Google:");
-  	my $google = Uniscan::Google->new();
-  	$google->search($args{o});
+	$func->write("| Google:");
+	my $google = Uniscan::Google->new();
+	$google->search($args{o});
 	$func->writeHTMLValue("Site list saved in file sites.txt");
-  	$func->write("| Site list saved in file sites.txt");
-  	$func->write("="x99);
+	$func->write("| Site list saved in file sites.txt");
+	$func->write("="x99);
 	$func->writeHTMLCategoryEnd();
 }
 else{
@@ -125,7 +149,7 @@ foreach my $url (@urllist){
 		}
 	}
 
-
+	push(@urls, $url);
 	$crawler->AddUrl($url);
 	$func->write("="x99);
 	$func->write("| Domain: $url");
@@ -167,11 +191,20 @@ foreach my $url (@urllist){
 		if($args{q}) {
 			$func->write("|\n| Directory check:");
 			$func->writeHTMLItem("Directory check:<br>");
-			my @dir = $func->Check($url, "Directory");
-			foreach my $d (@dir){
-				$crawler->AddUrl($d);
+			my $http = Uniscan::Http->new();
+			my $req = $url . "uniscan" . int(rand(1000)) . "/";
+			my $res = $http->HEAD($req);
+			if($res->code !~/404/){
+				$func->write("| Skipped because $req did not return the code 404");
+				$func->writeHTMLValue("Skipped because $req did not return the code 404");
 			}
-			@dir   = ();
+			else {
+				my @dir = $func->Check($url, "Directory");
+				foreach my $d (@dir){
+					$crawler->AddUrl($d);
+				}
+				@dir   = ();
+			}
 			$func->write("="x99);
 		}
 		#FILE CHECKS
@@ -179,11 +212,20 @@ foreach my $url (@urllist){
 			$func->write("|" . " "x99);
 			$func->write("| File check:");
 			$func->writeHTMLItem("File check:<br>");
-			my @files = $func->Check($url, "Files");
-			foreach my $f (@files){
-				$crawler->AddUrl($f);
+			my $http = Uniscan::Http->new();
+			my $req = $url . "uniscan" . int(rand(1000)) . "/";
+			my $res = $http->HEAD($req);
+			if($res->code !~/404/){
+				$func->write("| Skipped because $req did not return the code 404");
+				$func->writeHTMLValue("Skipped because $req did not return the code 404");
 			}
-			@files = ();
+			else {
+				my @files = $func->Check($url, "Files");
+				foreach my $f (@files){
+					$crawler->AddUrl($f);
+				}
+				@files = ();
+			}
 			$func->write("="x99);
 		}
 		#robots check
@@ -201,7 +243,7 @@ foreach my $url (@urllist){
 			# crawler start
 			$func->write("|\n| Crawler Started:");
 			$crawler->loadPlugins();
-			our @urls = $crawler->start();
+			@urls = $crawler->start();
 			our @forms = $crawler->GetForms();
 			foreach (@forms){
 				push(@urls, $_);
@@ -238,7 +280,7 @@ foreach my $url (@urllist){
 			$func->writeHTMLCategory("STRESS TESTS");
 			$func->write("| Stress tests:");
 			$stress->loadPlugins();
-			$stress->run($url);
+			$stress->run(@urls);
 			$func->writeHTMLCategoryEnd();
 		}
 		$func->write("="x99);
@@ -247,6 +289,7 @@ foreach my $url (@urllist){
 	else{
 		$func->write("| [-] Request Timeout");
 	}
+	@urls = ();
 	$func->writeHTMLEnd();
 	$func->MoveReport($url);
 }

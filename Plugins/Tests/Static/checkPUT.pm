@@ -9,7 +9,7 @@ use Uniscan::Functions;
 sub new {
     my $class    = shift;
     my $self     = {name => "PUT method test", version => 1.2};
-	our $enabled  = 1;
+	our $enabled  = 0;
     return bless $self, $class;
 }
 

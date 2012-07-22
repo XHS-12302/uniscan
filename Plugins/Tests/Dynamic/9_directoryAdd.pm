@@ -9,7 +9,7 @@ my $func = Uniscan::Functions->new();
 
 sub new {
 	my $class    = shift;
-	my $self     = {name => "Learning New Directories", version=>1.1};
+	my $self     = {name => "Learning New Directories", version=>1.2};
 	our $enabled  = 1;
 	return bless $self, $class;
 	our %dir = ();
@@ -31,6 +31,8 @@ sub execute(){
 		foreach my $d (@directories){
 			$d =~ s/\///g;
 			$d .= '/';
+			$d =~s/\r//g;
+			chomp($d);
 			if(($d =~ /^\w+\/$/) && (length($d)>2) && (length($d)<15) && $d !~/^\d+\/$/){
 				my $e = 0;
 				foreach my $l (@line){
@@ -46,7 +48,8 @@ sub execute(){
 		}
 	}
 	open(a, ">Directory");
-	foreach my $l (@line){
+	my @dir = sort(@line);
+	foreach my $l (@dir){
 		chomp $l;
 		print a "$l\n";
 	}

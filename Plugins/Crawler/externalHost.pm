@@ -4,11 +4,11 @@ use Uniscan::Functions;
 use URI;
 
 	my $func = Uniscan::Functions->new();
+	my %external = ();
 
 sub new {
     my $class    = shift;
     my $self     = {name => "External Host Detect", version => 1.2};
-	our %external : shared = ();
 	our $enabled = 1;
     return bless $self, $class;
 }
@@ -85,14 +85,6 @@ sub get_url(){
 	}
 }
 
-sub write_vul(){
-	my ($filtxt, @content) = @_;
-	open(my $a, ">>$filtxt") or die "$!\n";
-	foreach(@content){
-		print $a "$_\n";
-	}
-	close($a);
-}
 
 ##############################################
 #  Function host

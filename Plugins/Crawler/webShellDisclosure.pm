@@ -5,6 +5,7 @@ use Uniscan::Functions;
 # this plug-in search for web backdoors while crawler is running.
 
 my $func = Uniscan::Functions->new();
+my %shells = ();
 
 my @wb = (	"c99shell<\/title>",
 		"C99Shell v",
@@ -45,7 +46,6 @@ my @wb = (	"c99shell<\/title>",
 sub new {
 	my $class    = shift;
 	my $self     = {name => "Web Backdoor Disclosure", version => 1.1};
-	our %shells : shared = ();
 	our $enabled = 1;
 	return bless $self, $class;
 }

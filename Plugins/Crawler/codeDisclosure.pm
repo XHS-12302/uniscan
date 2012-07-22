@@ -3,11 +3,11 @@ package Plugins::Crawler::codeDisclosure;
 use Uniscan::Functions;
 
 	my $func = Uniscan::Functions->new();
+	my %source = ();
 
 sub new {
     my $class    = shift;
     my $self     = {name => "Code Disclosure", version => 1.0};
-	our %source : shared = ();
 	our $enabled = 1;
     return bless $self, $class;
 }
@@ -16,7 +16,7 @@ sub execute {
 	my $self = shift;
 	my $url = shift;
 	my $content = shift;
-	my @codes = ('<\?php', '#include <', '#!\/usr', '#!\/bin', 'import java\.', 'public class .+\{', '<\%.+\%>', '<asp:', 'package\s.+\;.*');
+	my @codes = ('<\?php', '#include <', '#!\/usr', '#!\/bin', 'import java\.', 'public class .+\{', '<\%.+\%>', '<asp:', 'package\s\w+\;');
 
 	
 	foreach my $code (@codes){

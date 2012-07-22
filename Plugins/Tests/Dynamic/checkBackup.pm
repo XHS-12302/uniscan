@@ -4,20 +4,23 @@ use Uniscan::Configure;
 use Uniscan::Functions;
 use Thread::Queue;
 use Uniscan::Http;
+use Thread::Semaphore;
 use threads;
 
 	my $c = Uniscan::Configure->new(conffile => "uniscan.conf");
 	my $func = Uniscan::Functions->new();
 	my $http = Uniscan::Http->new();
-
+	my $q = new Thread::Queue;
+	my @bkpf :shared = ();
+	my $semaphore = Thread::Semaphore->new();
+	
 sub new {
 	my $class    = shift;
-	my $self     = {name => "Find Backup Files", version=>1.1};
+	my $self     = {name => "Find Backup Files", version=>1.2};
 	our $enabled  = 1;
 	our %conf = ( );
 	%conf = $c->loadconf();
-	our $q : shared = "";
-	our @bkpf :shared = ();
+
 	return bless $self, $class;
 }
 
@@ -29,10 +32,26 @@ sub execute(){
 	$func->write("|"." "x99);
 	$func->write("| Backup Files:");
 	$func->writeHTMLItem("Backup Files:<br>");
-	@urls = $func->remove(@urls) if(scalar(@urls));
-	$func->INotPage($urls[1]);
-	&threadnize("checkNoExist", @urls);
-	CheckBackupFiles(@bkpf);
+	my $u = "";
+	foreach (@urls){
+		if(/^https?:\/\//){
+			$u = $_;
+			last;
+		}
+	}
+	$u = substr($u, 0, rindex($u, '/'));
+	my $req = $u . '/testing123';
+	my $r = $http->HEAD($req);
+	if($r->code !~/404/ && $conf{'force_bf'} == 0){
+		$func->write("| Skipped because $req did not return the code 404");
+		$func->writeHTMLValue("Skipped because $req did not return the code 404");
+	}
+	else{
+		@urls = $func->remove(@urls) if(scalar(@urls));
+		$func->INotPage($urls[1]);
+		&threadnize("checkNoExist", @urls);
+		CheckBackupFiles(@bkpf);
+	}
 }
 
 sub clean{
@@ -46,22 +65,8 @@ sub clean{
 sub CheckBackupFiles(){
 	my @files = @_;
 	
-	my @backup = (	'.bak',
-			'.bkp',
+	my @backup = (	'.bkp',
 			'~',
-			'.old',
-			'.cpy',
-			'.rar',
-			'.zip',
-			'.tar',
-			'.tgz',
-			'.ini',
-			'.inc',
-			'.gz',
-			'.tmp',
-			'.txt',
-			'.bck',
-			'.tar.gz'
 		    );
 	my %bkp = ();
 	my @file = ();
@@ -100,14 +105,16 @@ sub checkBackup(){
 
 sub GetResponse(){
 	
-	while($q->pending()){
+	while($q->pending() > 0){
 		my $url1 = $q->dequeue;
-		print "[*] Remaining tests: ". $q->pending ." Threads: " . (scalar(threads->list())+1) ."       \r";
+		next if(not defined $url1);
+		next if($url1 !~/^https?:\/\//);
+		next if($url1 =~/#/);
+		print "[*] Remaining tests: ". $q->pending ."       \r";
 		if($url1 =~/^https:\/\//){
 			my $response = $http->GETS($url1);
 			if($response){
 				if($response =~ $conf{'code'} && $pattern !~ m/$response->content/){
-					push(@list, $url1);
 					$func->write("| [+] CODE: " .$response."\t URL: $url1");
 					$func->writeHTMLValue("CODE: " .$response." URL: $url1");
 				}
@@ -123,49 +130,44 @@ sub GetResponse(){
 			$ua->max_size($conf{'max_size'});
 			$ua->max_redirect(0);
 			$ua->protocols_allowed( [ 'http'] );
-			if($conf{'proxy'} ne "0.0.0.0" && $conf{'proxy_port'} != 65000){
+			if($conf{'use_proxy'} == 1){
 				$ua->proxy(['http'], 'http://'. $conf{'proxy'} . ':' . $conf{'proxy_port'} . '/');
 			}
 
 			my $response=$ua->request($req);
 			if($response){
 				if($response->code =~ $conf{'code'} && $pattern !~ m/$response->content/){
-					push(@list, $url1);
 					$func->write("| [+] CODE: " .$response->code."\t URL: $url1");
 					$func->writeHTMLValue("CODE: " .$response->code." URL: $url1");
 				}
 			}
-			$req = 0;
-			$ua = 0;
-			$response = 0;
 		}
 	}
+	$q->enqueue(undef);
 }
 
 
  sub threadnize(){
 	my ($fun, @tests) = @_;
-	$q = 0;
-	$q = new Thread::Queue;
 	$tests[0] = 0;
 	foreach my $test (@tests){
 		$q->enqueue($test) if($test);
 	}
 
 	my $x=0;
+	my @threads = ();
 	while($q->pending() && $x <= $conf{'max_threads'}-1){
 		no strict 'refs';
-		threads->new(\&{$fun});
+		push @threads, threads->new(\&{$fun});
 		$x++;
 	}
 
-	my @threads = threads->list();
-        foreach my $running (@threads) {
+	sleep(2);
+	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
-        }
+		print "[*] Remaining tests: ". $q->pending ."       \r";
+	}
 	@threads = ();
-	$q = 0;
 }
 
 
@@ -212,14 +214,17 @@ return 0;
 }
 
 sub checkNoExist(){
-	while($q->pending()){
+	while($q->pending() > 0){
 		my $url1 = $q->dequeue;
+		next if(not defined $url1);
 		print "| [*] Creating tests ". $q->pending() ."    \r";
 		if(&checkFile($url1."adad") != 1){
+			$semaphore->down();
 			push(@bkpf, $url1);
+			$semaphore->up();
 		}
-
 	}
+	$q->enqueue(undef);
 }
 
 

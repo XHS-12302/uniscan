@@ -2,13 +2,13 @@ package Plugins::Crawler::checkUploadForm;
 
 use Uniscan::Functions;
 
-	my $func = Uniscan::Functions->new();
+my $func = Uniscan::Functions->new();
+my %upload = ();
 
 sub new {
     my $class    = shift;
     my $self     = {name => "Upload Form Detect", version => 1.0 };
-	our %upload : shared = ();
-	our $enabled = 1;
+    our $enabled = 1;
     return bless $self, $class;
 }
 

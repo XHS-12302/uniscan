@@ -7,6 +7,7 @@ use Socket;
 use threads;
 use threads::shared;
 use Thread::Queue;
+use Thread::Semaphore;
 use HTTP::Request;
 use LWP::UserAgent;
 use Uniscan::Configure;
@@ -17,9 +18,9 @@ our %conf = ( );
 our $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
 %conf = $cfg->loadconf();
 our $pattern;
-our @list : shared = ( );
-our $q :shared = new Thread::Queue;
-
+my $q = new Thread::Queue;
+my $semaphore = Thread::Semaphore->new();
+our @list :shared= ( );
 ##############################################
 #  Function GetServerInfo
 #  this function write the banner of http server
@@ -76,8 +77,10 @@ sub GetServerIp(){
 
 sub Check(){
 	my ($self, $url, $txtfile) = @_;
+	$semaphore->down();
 	@list = ( );
-	open(my $file, "<$txtfile") or die "$!\n";
+	$semaphore->up();
+	open(my $file, "<", $txtfile) or die "$!\n";
 	my @directory = <$file>;
 	close($file);
 	
@@ -86,22 +89,20 @@ sub Check(){
 		chomp($dir);
 		$q->enqueue($url.$dir);
 	}
-
-	our @threads = threads->list();
-        our $code : shared = 0;
-	our $ur   : shared = 0;
 	my $x =0;
-
+	my @threads = ();
 	while($q->pending() && $x <  $conf{'max_threads'}){
 		$x++;
-		threads->new(\&GetResponse);
+		push @threads, threads->create(\&GetResponse);
 	}
 
-	@threads = threads->list();
-        foreach my $running (@threads) {
+	
+	sleep(2);
+	
+	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending ." Threads: " . (scalar(threads->list())+1) ."       \r";
-        }
+		print "[*] Remaining tests: ". $q->pending ."       \r";
+	}
 return @list;
 }
 
@@ -118,18 +119,20 @@ return @list;
 
 
 sub GetResponse(){
-	
+	my $http = Uniscan::Http->new();
 	while($q->pending()){
 		my $url1 = $q->dequeue;
-		print "[*] Remaining tests: ". $q->pending ." Threads: " . (scalar(threads->list())+1) ."       \r";
+		next if(not defined $url1);
+		print "[*] Remaining tests: ". $q->pending ."       \r";
 		if($url1 =~/^https:\/\//){
-			my $http = Uniscan::Http->new();
 			my $response = $http->GETS($url1);
 			if($response){
 				$response =~ s/\r|\n//g;
 				$url1 =~ s/\r|\n//g;
 				if($response =~ $conf{'code'} && $pattern !~ m/$response->content/){
+					$semaphore->down();
 					push(@list, $url1);
+					$semaphore->up();
 					&write('', "| [+] CODE: " .$response." URL: $url1");
 					&writeHTMLValue('', "CODE: $response URL: $url1");
 				}
@@ -140,30 +143,20 @@ sub GetResponse(){
 		}
 
 		else{
-			my $req=HTTP::Request->new(GET=>$url1);
-			my $ua=LWP::UserAgent->new(agent => $conf{'user_agent'});
-			$ua->timeout($conf{'timeout'});
-			$ua->max_size($conf{'max_size'});
-			$ua->max_redirect(0);
-			$ua->protocols_allowed( [ 'http'] );
-			if($conf{'proxy'} ne "0.0.0.0" && $conf{'proxy_port'} != 65000){
-				$ua->proxy(['http'], 'http://'. $conf{'proxy'} . ':' . $conf{'proxy_port'} . '/');
-			}
-
-			my $response=$ua->request($req);
+			my $response=$http->HEAD($url1);
 			if($response){
-				$url1 =~ s/\r|\n//g;
-				if($response->code =~ $conf{'code'} && $pattern !~ m/$response->content/){
+				if($response->code =~ $conf{'code'}){
+					$semaphore->down();
 					push(@list, $url1);
+					$semaphore->up();
 					&write('', "| [+] CODE: " .$response->code."\t URL: $url1");
 					&writeHTMLValue("", "CODE: " .$response->code." URL: $url1");
 				}
 			}
-			$req = 0;
-			$ua = 0;
 			$response = 0;
 		}
 	}
+	$q->enqueue(undef);
 }
 
 
@@ -179,12 +172,12 @@ sub GetResponse(){
 
 sub write(){
 	my ($self, $text) = @_;
-
+	$semaphore->down();
 	open(my $log, ">>". $conf{'log_file'}) or die "$!\n";
 	print $log "$text\n";
 	close($log);
 	print "$text\n";
-
+	$semaphore->up();
 }
 
 
@@ -201,7 +194,7 @@ sub write(){
 
 sub INotPage(){
 	my ($self, $url) = @_;
-	$url .= "uniscan". rand(10000) ."uniscan/";
+	$url .= "/uniscan". int(rand(10000)) ."uniscan/";
 	my $h = Uniscan::Http->new();
 	my $content = $h->GET($url);
 	if($content =~ /404/){
@@ -229,7 +222,7 @@ sub get_file(){
 	my ($self, $url1) = @_;
 	substr($url1,0,7) = "" if($url1 =~/http:\/\//);
 	substr($url1,0,8) = "" if($url1 =~/https:\/\//);
-
+	substr($url1, index($url1, '?'), length($url1)) = "" if($url1 =~/\?/);
 	if($url1 =~ /\//){
 		$url1 = substr($url1, index($url1, '/'), length($url1)) if(length($url1) != index($url1, '/'));
 		if($url1 =~ /\?/){
@@ -284,18 +277,19 @@ sub get_url(){
 ##############################################
 
 sub remove{
-   	my @si = @_;
-   	my @novo = ();
-   	my %ss;
-   	foreach my $s (@si)
-   	{
-        	if (!$ss{$s})
-        	{
-            		push(@novo, $s);
-            		$ss {$s} = 1;
-        	}
-    	}
-    	return (@novo);
+	return keys %{{ map { $_ => 1 } @_ }};
+#   	my @si = @_;
+#   	my @novo = ();
+#   	my %ss;
+#  	foreach my $s (@si)
+#   	{
+#        	if (!$ss{$s})
+#        	{
+#            		push(@novo, $s);
+#            		$ss{$s} = 1;
+#        	}
+#    	}
+#    	return (@novo);
 }
 
 
@@ -449,7 +443,8 @@ sub CheckRedirect(){
 }
 
 sub createHTML(){
-	open(my $html, ">$conf{'html_report'}");
+	$semaphore->down();
+	open(my $html, ">", $conf{'html_report'});
 	print $html '	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 			<html xmlns="http://www.w3.org/1999/xhtml">
 			<head>
@@ -460,12 +455,14 @@ sub createHTML(){
 			</head>
 			<body id="div0">
 			';
-	close($html);	
+	close($html);
+	$semaphore->up();
 }
 
 sub createHTMLRedirect(){
 	my $file = shift;
-	open(my $html, ">$conf{'html_report'}");
+	$semaphore->down();
+	open(my $html, ">", $conf{'html_report'});
 	print $html '	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 			<html xmlns="http://www.w3.org/1999/xhtml">
 			<head>
@@ -476,53 +473,64 @@ sub createHTMLRedirect(){
 			</head>
 			<body id="div0">
 			';
-	close($html);	
+	close($html);
+	$semaphore->up();
 }
 
 sub writeHTMLCategory(){
 	my ($self, $content) = @_;
-	open(my $html, ">>$conf{'html_report'}");
+	$semaphore->down();
+	open(my $html, ">>", $conf{'html_report'});
 	print $html "<br><br><br><br><br><center>$content</center>\n<hr>\n";
 	close($html);
+	$semaphore->up();
 }
 
 sub writeHTMLCategoryEnd(){
 	my ($self, $content) = @_;
-	open(my $html, ">>$conf{'html_report'}");
+	$semaphore->down();
+	open(my $html, ">>", $conf{'html_report'});
 	print $html "<hr>\n";
 	close($html);
-	
+	$semaphore->up();
 }
 
 sub writeHTMLItem(){
 	my ($self, $item) = @_;
-	open(my $html, ">>$conf{'html_report'}");
+	$semaphore->down();
+	open(my $html, ">>", $conf{'html_report'});
 	print $html "<br>$item \n";
 	close($html);
+	$semaphore->up();
 }
 
 sub writeHTMLValue(){
 	my ($self, $cont) = @_;
-	$cont =~s/\r|\n//g;	
-	open(my $html, ">>$conf{'html_report'}");
+	$cont =~s/\r|\n//g;
+	$semaphore->down();
+	open(my $html, ">>", $conf{'html_report'});
 	print $html "<font id=\"valor\">$cont</font><br>\n";
 	close($html);
+	$semaphore->up();
 }
 
 
 
 sub writeHTMLEnd(){
 	my $self = shift;
-	open(my $html, "<$conf{'html_report'}");
+	$semaphore->down();
+	open(my $html, "<", $conf{'html_report'});
 	my @con = <$html>;
 	close($html);
+	$semaphore->up();
 	
 	my $content = "@con";
 	$content =~ s/<meta http-equiv="refresh" content="10">//g;
-	
-	open($html, ">$conf{'html_report'}");
+	$semaphore->down();
+	open($html, ">", $conf{'html_report'});
 	print $html $content . "\n<hr></body></html>";
 	close($html);
+	$semaphore->up();
 }
 
 sub MoveReport(){

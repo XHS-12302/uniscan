@@ -9,7 +9,7 @@ use threads;
 	my $c = Uniscan::Configure->new(conffile => "uniscan.conf");
 	my $func = Uniscan::Functions->new();
 	my $http = Uniscan::Http->new();
-
+	my $q = new Thread::Queue;
 
 sub new {
     my $class    = shift;
@@ -17,8 +17,6 @@ sub new {
 	our $enabled  = 1;
 	our %conf = ( );
 	%conf = $c->loadconf();
-	our $q : shared = "";
-	our $vulnerable :shared = 0;
     return bless $self, $class;
 }
 
@@ -53,43 +51,44 @@ sub TestRFI(){
 
 my ($resp, $test) = 0;
 
-	while($q->pending){
+	while($q->pending > 0){
 		$test = $q->dequeue;
-		print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
+		next if(not defined $test);
+		print "[*] Remaining tests: ". $q->pending  ."       \r";
 		
 		$resp = $http->GET($test);
 		if($resp =~/$conf{'rfi_return'}/){
-			$vulnerable++;
-			$func->write("| [+] Vul[$vulnerable] [RFI] $test");
+			
+			$func->write("| [+] Vul [RFI] $test");
 			$func->writeHTMLValue($test);
 		}
 		$resp = 0;
 	}
+	$q->enqueue(undef);
 }
 
 sub threadnize(){
 	my ($fun, @tests) = @_;
-	$q = 0;
-	$q = new Thread::Queue;
-	$tests[0] = 0;
 	foreach my $test (@tests){
 		$q->enqueue($test) if($test);
 	}
 
 	my $x=0;
+	my @threads = ();
 	while($q->pending() && $x <= $conf{'max_threads'}-1){
 		no strict 'refs';
-		threads->new(\&{$fun});
+		push @threads, threads->new(\&{$fun});
 		$x++;
 	}
 
-	my @threads = threads->list();
-        foreach my $running (@threads) {
+	sleep(2);
+
+	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending ." Threads: " .(scalar(threads->list())+1) ."       \r";
-        }
+		print "[*] Remaining tests: ". $q->pending  ."       \r";
+	}
 	@threads = ();
-	$q = 0;
+
 }
 
 
