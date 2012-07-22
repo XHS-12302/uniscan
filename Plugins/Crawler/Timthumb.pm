@@ -1,9 +1,10 @@
 package Plugins::Crawler::Timthumb;
 
 use Uniscan::Functions;
-
+use Thread::Semaphore;
 	my $func = Uniscan::Functions->new();
-	my %tim = ();
+	our %tim : shared = ();
+	my $semaphore = Thread::Semaphore->new();
 
 sub new {
     my $class    = shift;
@@ -18,7 +19,9 @@ sub execute {
 	my $content = shift;
 
 	if($content =~m/TimThumb version : (.+)<\/pre>/g){
+		$semaphore->down();
 		$tim{$url} = $1 if($1 < 1.33);
+		$semaphore->up();
 	}
 }
 

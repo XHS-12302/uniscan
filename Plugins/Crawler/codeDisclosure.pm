@@ -1,9 +1,10 @@
 package Plugins::Crawler::codeDisclosure;
 
 use Uniscan::Functions;
-
+use Thread::Semaphore;
 	my $func = Uniscan::Functions->new();
-	my %source = ();
+	our %source : shared = ();
+	my $semaphore = Thread::Semaphore->new();
 
 sub new {
     my $class    = shift;
@@ -21,7 +22,9 @@ sub execute {
 	
 	foreach my $code (@codes){
 		if($content =~ /$code/i){
+			$semaphore->down();
 			$source{$url}++;
+			$semaphore->up();
 		}
 	}
 }

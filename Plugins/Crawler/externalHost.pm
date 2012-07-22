@@ -2,9 +2,10 @@ package Plugins::Crawler::externalHost;
 
 use Uniscan::Functions;
 use URI;
-
+use  Thread::Semaphore;
 	my $func = Uniscan::Functions->new();
-	my %external = ();
+	our %external : shared = ();
+	my $semaphore = Thread::Semaphore->new();
 
 sub new {
     my $class    = shift;
@@ -36,7 +37,9 @@ sub execute {
 			$link = &get_url($link);
 			if($url ne $link){
                 if($link !~ /$url_uri/){
+					$semaphore->down();
 					$external{$link}++ if($link);
+					$semaphore->up();
  			    }
 			}
 		}

@@ -3,9 +3,10 @@ package Plugins::Crawler::FCKeditor;
 use IO::Socket::INET;
 use Uniscan::Functions;
 use URI;
-
+use Thread::Semaphore;
 my $func = Uniscan::Functions->new();
-my %upload = ();
+our %upload : shared = ();
+my $semaphore = Thread::Semaphore->new();
 
 sub new {
 	my $class = shift;
@@ -64,7 +65,9 @@ if($content =~/<title>FCKeditor|FCKeditor - The text editor for internet/i && $c
 		my $path_file = $2;
 		my $file_name = $3;
 		if($code == 201 && $path_file =~/uniscan/ && $file_name=~/uniscan/){
+				$semaphore->down();
 				$upload{ "http://" . $host . $u} = $path_file;
+				$semaphore->up();
 		}
 		
 	}

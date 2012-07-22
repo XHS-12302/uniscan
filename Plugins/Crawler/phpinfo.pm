@@ -1,13 +1,13 @@
 package Plugins::Crawler::phpinfo;
 
 use Uniscan::Functions;
-
+use Thread::Semaphore;
 # this plug-in identify phpinfo() function on webpages
 
 my $func = Uniscan::Functions->new();
-
-	my %pages = ();
-	my %info = ();
+my $semaphore = Thread::Semaphore->new();
+our %pages : shared = ();
+our %info : shared  = ();
 
 sub new {
 	my $class    = shift;
@@ -22,14 +22,19 @@ sub execute {
 	my $content = shift;
 
 	if($content =~m/<title>phpinfo\(\)<\/title>/gi){
+		$semaphore->down();
 		$pages{$url}++;
-
+		$semaphore->up();
 		while($content =~m/<tr><td class="e">(.+?) <\/td><td class="v">(.+?)<\/td><\/tr>/g){
+			$semaphore->down();
 			$info{$1} = $2;
+			$semaphore->up();
 		}
 
 		while($content =~m/<tr><td class="e">(.+?)<\/td><td class="v">(.+?)<\/td><td class="v">(.+?)<\/td><\/tr>/g){
+			$semaphore->down();
 			$info{$1} = $2;
+			$semaphore->up();
 		}
 	}
 }

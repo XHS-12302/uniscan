@@ -1,15 +1,17 @@
 package Plugins::Crawler::emailColect;
 
 use Uniscan::Functions;
+use Thread::Semaphore;
 
+	my $semaphore = Thread::Semaphore->new();
 	my $func = Uniscan::Functions->new();
-	my %email = ();
+	our %email : shared = ();
 
 sub new {
-    my $class    = shift;
-    my $self     = {name => "E-mail Detection", version => 1.0};
+	my $class    = shift;
+	my $self     = {name => "E-mail Detection", version => 1.0};
 	our $enabled = 1;
-    return bless $self, $class;
+	return bless $self, $class;
 }
 
 sub execute {
@@ -18,7 +20,9 @@ sub execute {
 	my $content = shift;
 
 	while($content =~m/([\w\-\_\.]+\@[\w\d\-]+\.\w+[\.[a-z]+]*)/g){
+		$semaphore->down();
 		$email{$1}++;
+		$semaphore->up();
 	}
 }
 

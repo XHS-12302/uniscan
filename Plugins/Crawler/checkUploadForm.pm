@@ -1,9 +1,11 @@
 package Plugins::Crawler::checkUploadForm;
 
 use Uniscan::Functions;
+use Thread::Semaphore;
 
 my $func = Uniscan::Functions->new();
-my %upload = ();
+our %upload : shared = ();
+my $semaphore = Thread::Semaphore->new();
 
 sub new {
     my $class    = shift;
@@ -19,7 +21,9 @@ sub execute {
 	while($content =~ m/<input(.+?)>/gi){
 		my $params = $1;
 		if($params =~ /type *= *"file"/i){
+			$semaphore->down();
 			$upload{$url}++;
+			$semaphore->up();
 		}
 	}
 	
