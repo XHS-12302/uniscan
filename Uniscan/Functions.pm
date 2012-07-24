@@ -539,7 +539,12 @@ sub MoveReport(){
 	$url = &host($url);
 	$url .= ".html";
 	$msg =~ s/uniscan\.html/$url/g;
-	system("mv ". $conf{'html_report'} . " " . $msg);
+	if($^O eq "MSWin32"){
+		system("move ". $conf{'html_report'} . " " . $msg);
+	}
+	else{
+		system("mv ". $conf{'html_report'} . " " . $msg);
+	}
 	&write(" ", "HTML report saved in: $msg");
 	&createHTMLRedirect($url);
 	
@@ -555,14 +560,20 @@ sub host(){
 
 sub update(){
 	#backup old version
-	system("rm -rf ../uniscan-old") if(-d '../uniscan-old');
-	system("mkdir ../uniscan-old") if(!-d '../uniscan-old');
-	system("cp -R * ../uniscan-old/") if(-d '../uniscan-old');
-	#download and overwrite files
-	system("git clone git://git.code.sf.net/p/uniscan/code uniscan-code");
-	system("cp -R uniscan-code/* .; rm -rf uniscan-code/") if(-d "uniscan-code");
-	&write("", "| [*] Uniscan has updated to newest version");
-	exit();
+	if($^O ne "MSWin32"){
+		system("rm -rf ../uniscan-old") if(-d '../uniscan-old');
+		system("mkdir ../uniscan-old") if(!-d '../uniscan-old');
+		system("cp -R * ../uniscan-old/") if(-d '../uniscan-old');
+		#download and overwrite files
+		system("git clone git://git.code.sf.net/p/uniscan/code uniscan-code");
+		system("cp -R uniscan-code/* .; rm -rf uniscan-code/") if(-d "uniscan-code");
+		&write("", "| [*] Uniscan has updated to newest version");
+		exit();
+	}
+	else{
+		&write(" ", "Autoupdate not works on windows, disable the autoupdate in uniscan.conf\n");
+		exit();
+	}
 }
 
 1;

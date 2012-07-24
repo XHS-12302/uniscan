@@ -768,6 +768,7 @@ adlink/
 adlinks/
 adlog/
 adm/
+adm/
 adm/fckeditor/
 admbin/
 admin/FCKeditor/
@@ -1211,6 +1212,7 @@ canspam/
 cant/
 cantada/
 canterbury/
+captcha/
 captchas/
 caption/
 captions/
@@ -1588,6 +1590,7 @@ dir-app/
 dir/
 directory/
 directresize/
+dirimg/
 disable/
 disabled/
 discador/
@@ -2192,6 +2195,7 @@ imail/
 imails/
 imap/
 imapd/
+img/
 imgmap/
 imoveis/
 import/
@@ -2205,6 +2209,7 @@ inc/fckeditor/
 include/
 include/fckeditor/
 included/
+includes/
 incoming/
 index/
 index_frame/
@@ -3336,6 +3341,7 @@ states/
 statics/
 stats-ns/
 stats/
+stats/
 statsnet/
 statue/
 stealth/
@@ -3696,6 +3702,7 @@ webhost/
 webhosting/
 webhosts/
 webkit/
+webmail/
 webmail/
 webmin/
 webparts/
