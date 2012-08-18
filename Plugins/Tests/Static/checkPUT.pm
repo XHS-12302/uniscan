@@ -2,9 +2,13 @@ package Plugins::Tests::Static::checkPUT;
 
 use Uniscan::Http;
 use Uniscan::Functions;
-
-	my $func = Uniscan::Functions->new();
-	my $http = Uniscan::Http->new();
+use Uniscan::Configure;
+	
+my %conf = ( );
+my $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
+%conf = $cfg->loadconf();
+my $func = Uniscan::Functions->new();
+my $http = Uniscan::Http->new();
 
 sub new {
     my $class    = shift;
@@ -19,8 +23,8 @@ sub execute(){
 
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| Test PUT method:");
-	$func->writeHTMLItem("PUT Method Test:<br>");
+	$func->write("| ".$conf{'lang141'}.":");
+	$func->writeHTMLItem($conf{'lang141'} .":<br>");
     &CheckPut($url);
 	}
 
@@ -33,9 +37,9 @@ sub CheckPut(){
 	if($resp =~/uniscan123/){
 		$vulnerable++;
 		$func->write("="x100);
-		$func->write("| PUT method is enabled");
-		$func->writeHTMLValue("PUT method is enabled");
-		$func->write("| [+] Vul[$vulnerable]: $url/uniscan.txt");
+		$func->write("| ". $conf{'lang142'});
+		$func->writeHTMLValue($conf{'lang142'});
+		$func->write("| [+] Vul: $url/uniscan.txt");
 		$func->writeHTMLValue("$url/uniscan.txt");
 		$func->write("="x100);
 	}

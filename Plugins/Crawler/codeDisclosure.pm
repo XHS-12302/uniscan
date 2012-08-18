@@ -2,13 +2,18 @@ package Plugins::Crawler::codeDisclosure;
 
 use Uniscan::Functions;
 use Thread::Semaphore;
-	my $func = Uniscan::Functions->new();
-	our %source : shared = ();
-	my $semaphore = Thread::Semaphore->new();
+use Uniscan::Configure;
+	
+my %conf = ( );
+my $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
+%conf = $cfg->loadconf();
+my $func = Uniscan::Functions->new();
+our %source : shared = ();
+my $semaphore = Thread::Semaphore->new();
 
 sub new {
     my $class    = shift;
-    my $self     = {name => "Code Disclosure", version => 1.0};
+    my $self     = {name => "Code Disclosure", version => 1.1};
 	our $enabled = 1;
     return bless $self, $class;
 }
@@ -32,11 +37,12 @@ sub execute {
 
 sub showResults(){
 	my $self = shift;
-	$func->write("|\n| Source Code:");
-	$func->writeHTMLItem("Source Code Disclosure:<br>");
-	foreach my $url (%source){
-		$func->write("| [+] Source Code Found: ". $url . " " . $source{$url} . "x times") if($source{$url});
-		$func->writeHTMLValue("Source Code Found: ". $url) if($source{$url});
+	$func->write("|\n| ". $conf{'lang101'} .":");
+	$func->writeHTMLItem($conf{'lang101'} .":<br>");
+	foreach my $url (keys %source){
+		$func->write("| [+] ". $conf{'lang102'} .": ". $url) if($source{$url});
+		$func->writeHTMLValue($conf{'lang102'} .": ". $url) if($source{$url});
+		$func->writeHTMLVul("SOURCECODE") if($source{$url});
 	}
 }
 

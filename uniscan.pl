@@ -71,44 +71,44 @@ elsif($args{f}){
 	close($url_list);
 }
 elsif($args{i} && $args{o}){
-	$func->writeHTMLCategory("SEARCH ENGINE");
+	$func->writeHTMLCategory($conf{'lang2'});
 	$func->write("="x99);
 	$func->write("| Bing:");
 	$func->writeHTMLItem("Bing:<br>");
 	my $bing = Uniscan::Bing->new();
 	$bing->search($args{i});
-	$func->write("| Site list saved in file sites.txt");
-	$func->writeHTMLValue("Site list saved in file sites.txt");
+	$func->write("| " . $conf{'lang3'});
+	$func->writeHTMLValue($conf{'lang3'});
 	$func->write("="x99);
 	$func->writeHTMLItem("Google:<br>");
 	$func->write("| Google:");
 	my $google = Uniscan::Google->new();
 	$google->search($args{o});
-	$func->writeHTMLValue("Site list saved in file sites.txt");
-	$func->write("| Site list saved in file sites.txt");
+	$func->writeHTMLValue($conf{'lang3'});
+	$func->write("| ". $conf{'lang3'});
 	$func->write("="x99);
 	$func->writeHTMLCategoryEnd();
 }
 elsif($args{i}){
-	$func->writeHTMLCategory("SEARCH ENGINE");
+	$func->writeHTMLCategory($conf{'lang2'});
 	$func->write("="x99);
 	$func->write("| Bing:");
 	$func->writeHTMLItem("Bing Search:<br>");
 	my $bing = Uniscan::Bing->new();
 	$bing->search($args{i});
-	$func->writeHTMLValue("Site list saved in file sites.txt");
-	$func->write("| Site list saved in file sites.txt");
+	$func->writeHTMLValue($conf{'lang3'});
+	$func->write("| ". $conf{'lang3'});
 	$func->writeHTMLCategoryEnd();
 }
 elsif($args{o}){
-	$func->writeHTMLCategory("SEARCH ENGINE");
+	$func->writeHTMLCategory($conf{'lang2'});
 	$func->write("="x99);
 	$func->writeHTMLItem("Google Search:<br>");
 	$func->write("| Google:");
 	my $google = Uniscan::Google->new();
 	$google->search($args{o});
-	$func->writeHTMLValue("Site list saved in file sites.txt");
-	$func->write("| Site list saved in file sites.txt");
+	$func->writeHTMLValue($conf{'lang3'});
+	$func->write("| ". $conf{'lang3'});
 	$func->write("="x99);
 	$func->writeHTMLCategoryEnd();
 }
@@ -118,7 +118,7 @@ else{
 
 if($args{b}){
 	&background();
-	printf("Going to background with pid: [%d]\n", $$);
+	printf( $conf{'lang1'} . ": [%d]\n", $$);
 }
 
 
@@ -129,11 +129,11 @@ $func->DoLogin();
 
 foreach my $url (@urllist){
 	$func->createHTML();
-	$func->write("Scan date: " . $func->date(0));
+	$func->write($conf{'lang4'} . ": " . $func->date(0));
 
 # check redirect and fix it
 	my $crawler = Uniscan::Crawler->new();
-	$func->writeHTMLCategory("TARGET");
+	$func->writeHTMLCategory($conf{'lang5'});
 	if($conf{'redirect'} == 1){
 		$url = $func->CheckRedirect($url);
 		my $url_temp = $url;
@@ -152,18 +152,17 @@ foreach my $url (@urllist){
 	push(@urls, $url);
 	$crawler->AddUrl($url);
 	$func->write("="x99);
-	$func->write("| Domain: $url");
-	$func->writeHTMLItem("Domain:");
+	$func->write("| ". $conf{'lang6'} .": $url");
+	$func->writeHTMLItem($conf{'lang6'});
 	$func->writeHTMLValue($url);
 	my $time1 = time();
 	$func->GetServerInfo($url);
 	my $time2 = time();
 	my $total_time = $time2 - $time1;
-	$func->write("| Wait Time ".$total_time." seconds");
 	
 	if($total_time < 30){
 		$func->write("| IP: ". $func->GetServerIp($url));
-		$func->writeHTMLItem("Target IP:");
+		$func->writeHTMLItem($conf{'lang7'} . ":");
 		$func->writeHTMLValue($func->GetServerIp($url));
 		$func->writeHTMLCategoryEnd();
 		$func->INotPage($url);
@@ -171,7 +170,7 @@ foreach my $url (@urllist){
 		# web fingerprint
 		if($args{g}){
 			my $webf = Uniscan::FingerPrint->new();
-			$func->writeHTMLCategory("WEB SERVER INFORMATION");
+			$func->writeHTMLCategory($conf{'lang8'});
 			$webf->fingerprint($url);
 			$webf->bannergrabing($url);
 			$func->writeHTMLCategoryEnd();
@@ -180,23 +179,23 @@ foreach my $url (@urllist){
 		# server fingerprint
 		if($args{j}){
 			my $serverf = Uniscan::FingerPrint_Server->new();
-			$func->writeHTMLCategory("SERVER INFORMATION");
+			$func->writeHTMLCategory($conf{'lang9'});
 			$serverf->fingerprintServer($url);
 			$func->writeHTMLCategoryEnd();
 		}
 
 		# start checks to feed the crawler
 		#DIRECTORY CHECKS
-		$func->writeHTMLCategory("CRAWLING");
+		$func->writeHTMLCategory($conf{'lang10'});
 		if($args{q}) {
-			$func->write("|\n| Directory check:");
-			$func->writeHTMLItem("Directory check:<br>");
+			$func->write("|\n| ". $conf{'lang11'} .":");
+			$func->writeHTMLItem($conf{'lang11'} .":<br>");
 			my $http = Uniscan::Http->new();
 			my $req = $url . "uniscan" . int(rand(1000)) . "/";
 			my $res = $http->HEAD($req);
 			if($res->code !~/404/){
-				$func->write("| Skipped because $req did not return the code 404");
-				$func->writeHTMLValue("Skipped because $req did not return the code 404");
+				$func->write("| ". $conf{'lang12'}. " $req " . $conf{'lang13'});
+				$func->writeHTMLValue($conf{'lang12'}." $req " . $conf{'lang13'});
 			}
 			else {
 				my @dir = $func->Check($url, "Directory");
@@ -210,14 +209,14 @@ foreach my $url (@urllist){
 		#FILE CHECKS
 		if($args{w}) {
 			$func->write("|" . " "x99);
-			$func->write("| File check:");
-			$func->writeHTMLItem("File check:<br>");
+			$func->write("| ". $conf{'lang14'} .":");
+			$func->writeHTMLItem($conf{'lang14'} . ":<br>");
 			my $http = Uniscan::Http->new();
 			my $req = $url . "uniscan" . int(rand(1000)) . "/";
 			my $res = $http->HEAD($req);
 			if($res->code !~/404/){
-				$func->write("| Skipped because $req did not return the code 404");
-				$func->writeHTMLValue("Skipped because $req did not return the code 404");
+				$func->write("| " . $conf{'lang12'} ." $req " . $conf{'lang13'});
+				$func->writeHTMLValue($conf{'lang12'} ." $req " . $conf{'lang13'});
 			}
 			else {
 				my @files = $func->Check($url, "Files");
@@ -230,18 +229,25 @@ foreach my $url (@urllist){
 		}
 		#robots check
 		if($args{e}){
-			$func->write("|\n| Check robots.txt:");
-			$func->writeHTMLItem("Check robots.txt:<br>");
+			$func->write("|\n| ". $conf{'lang15'} .":");
+			$func->writeHTMLItem($conf{'lang15'} .":<br>");
 			foreach my $f ($crawler->CheckRobots($url)){
 				$crawler->AddUrl($f);
 			}
+			
+			$func->write("|\n| ". $conf{'lang144'} .":");
+			$func->writeHTMLItem($conf{'lang144'} .":<br>");
+			foreach my $f ($crawler->CheckSitemap($url)){
+				$crawler->AddUrl($f);
+			}
+			
 			$func->write("="x99);
 		}
 		# end of checks to feed the crawler
 
 		if($args{d}){
 			# crawler start
-			$func->write("|\n| Crawler Started:");
+			$func->write("|\n| ". $conf{'lang16'} .":");
 			$crawler->loadPlugins();
 			@urls = $crawler->start();
 			our @forms = $crawler->GetForms();
@@ -250,44 +256,44 @@ foreach my $url (@urllist){
 			}
 			# crawler end
 			$crawler->Clear();
-			$crawler = 0;
+			$crawler = undef;
 		}
 		$func->writeHTMLCategoryEnd();
-		$scan = Uniscan::Scan->new() if(!$scan);
+		$scan = Uniscan::Scan->new();
 		if($args{d}){
-			$func->writeHTMLCategory("DYNAMIC TESTS");
+			$func->writeHTMLCategory($conf{'lang17'});
 			#start dinamic and static tests
 			$func->write("="x99);
-			$func->write("| Dynamic tests:");
+			$func->write("| ". $conf{'lang18'} .":");
 			$scan->loadPluginsDynamic();
 			$scan->runDynamic(@urls);
 			$func->writeHTMLCategoryEnd();
 		}
 	
 		if($args{s}){
-			$func->writeHTMLCategory("STATIC TESTS");
+			$func->writeHTMLCategory($conf{'lang19'});
 			$func->write("="x99);
-			$func->write("| Static tests:");
+			$func->write("| ". $conf{'lang20'} .":");
 			$scan->loadPluginsStatic();
 			$scan->runStatic($url);
 			$func->writeHTMLCategoryEnd();
 		}
-	
+		$scan = undef;
 		if($args{r}){
 			use Uniscan::Stress;
 			my $stress = Uniscan::Stress->new();
 			$func->write("="x99);
-			$func->writeHTMLCategory("STRESS TESTS");
-			$func->write("| Stress tests:");
+			$func->writeHTMLCategory($conf{'lang21'});
+			$func->write("| ". $conf{'lang22'} .":");
 			$stress->loadPlugins();
 			$stress->run(@urls);
 			$func->writeHTMLCategoryEnd();
 		}
 		$func->write("="x99);
-		$func->write("Scan end date: " . $func->date(1) . "\n\n\n");
+		$func->write( $conf{'lang23'} .": " . $func->date(1) . "\n\n\n");
 	}
 	else{
-		$func->write("| [-] Request Timeout");
+		$func->write("| [-] ". $conf{'lang24'});
 	}
 	@urls = ();
 	$func->writeHTMLEnd();

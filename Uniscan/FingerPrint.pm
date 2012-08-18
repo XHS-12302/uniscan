@@ -20,6 +20,10 @@ my $wordpress = 0;
 my $joomla = 0;
 my $drupal = 0;
 
+my %conf = ( );
+my $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
+%conf = $cfg->loadconf();
+
 
 
 sub fingerprint{
@@ -36,8 +40,8 @@ sub fingerprint{
 ##############################################
 
 	$func->write("="x99);
-	$func->write("| METHOD ENABLED");
-	$func->writeHTMLItem("Enabled Methods:<br>");
+	$func->write("| " . $conf{'lang39'});
+	$func->writeHTMLItem($conf{'lang40'} .":<br>");
 	$func->write("| ".""x99);
 	my $host = $url;
 	my $path = "pdUsmmdhVC";
@@ -75,8 +79,8 @@ sub fingerprint{
 	$ua->conn_cache(LWP::ConnCache->new); # use connection cacheing (faster)
 	$ua->agent("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.5) Gecko/20031027");
 	$func->write("="x99);
-	$func->write("| SERVICES WEB");
-	$func->writeHTMLItem("Web Services:<br>");
+	$func->write("| ". $conf{'lang42'});
+	$func->writeHTMLItem($conf{'lang42'} . ":<br>");
 	$func->write("| ".""x99);
 	open(webServicesDB, "<", "DB/web-services.db");
 	my @parsewebServicesdb = <webServicesDB>;
@@ -101,7 +105,7 @@ sub fingerprint{
 	$ua->agent("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.5) Gecko/20031027");
 	$func->write("="x99);
 	$func->write("| FAVICON.ICO");
-	$func->writeHTMLItem("Favicon.ico MD5 Match:<br>");
+	$func->writeHTMLItem("Favicon.ico ". $conf{'lang44'} .":<br>");
 	$func->write("| ".""x99);
 	my $favicon = $ua->get("http://$url/favicon.ico");
 	if($favicon->is_success){
@@ -129,8 +133,8 @@ sub fingerprint{
 	$ua->conn_cache(LWP::ConnCache->new); # use connection cacheing (faster)
 	$ua->agent("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.5) Gecko/20031027");
 	$func->write("="x99);
-	$func->write("| ERROR INFORMATION");
-	$func->writeHTMLItem("Error Information:<br>");
+	$func->write("| ". $conf{'lang45'});
+	$func->writeHTMLItem($conf{'lang46'} .":<br>");
 	$func->write("| ".""x99);
 	my $getErrorString = &genErrorString();
 	my $_404responseGet = $ua->get("http://$url/$getErrorString");
@@ -149,8 +153,8 @@ sub fingerprint{
 	$ua->conn_cache(LWP::ConnCache->new); # use connection cacheing (faster)
 	$ua->agent("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.5) Gecko/20031027");
 	$func->write("="x99);
-	$func->write("| TYPE ERROR");
-	$func->writeHTMLItem("Type Error:<br>");
+	$func->write("| ". $conf{'lang47'});
+	$func->writeHTMLItem($conf{'lang48'} .":<br>");
 	$func->write("| ".""x99);
 	# Some servers just give you a 200 with every req. lets see
 	my @webExtentions = ('.php','.html','.htm','.aspx','.asp','.jsp','.cgi');
@@ -159,8 +163,8 @@ sub fingerprint{
 		my $check200 = $ua->get("http://$url/$testErrorString" . $Extention);
 		if($check200->is_success){
 			if(!$existe_E{$Extention}){
-				$func->write("| http://$url/$testErrorString" . $Extention . " responded with code: " . $check200->code . " the server might just responde with this code even when the dir, file, or Extention: $Extention doesn't exist! any results from this server may be void");
-				$func->writeHTMLValue("http://$url/$testErrorString$Extention responded with code:" . $check200->code . " the server might just responde with this code even when the dir, file, or Extention: $Extention doesn't exist! any results from this server may be void");
+				$func->write("| http://$url/$testErrorString" . $Extention . " ". $conf{'lang49'} .": " . $check200->code . " ". $conf{'lang50'} .": $Extention " . $conf{'lang51'});
+				$func->writeHTMLValue("http://$url/$testErrorString$Extention ". $conf{'lang49'} .":" . $check200->code . " ". $conf{'lang50'} .": $Extention ". $conf{'lang51'});
 				$existe_E{$Extention} = 1;
 			}
 		}
@@ -174,8 +178,8 @@ sub fingerprint{
 	$ua->conn_cache(LWP::ConnCache->new); # use connection cacheing (faster)
 	$ua->agent("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.5) Gecko/20031027");
 	$func->write("="x99);
-	$func->write("| SERVER MOBILE");
-	$func->writeHTMLItem("Server For Mobile Device:<br>");
+	$func->write("| ". $conf{'lang52'});
+	$func->writeHTMLItem($conf{'lang53'} .":<br>");
 	$func->write("| ".""x99);
 	#does the site have a mobile page?
 	my $MobileUA = LWP::UserAgent->new;
@@ -183,8 +187,8 @@ sub fingerprint{
 	my $mobilePage = $MobileUA->get("http://$url/");
 	my $regularPage = $ua->get("http://$url/");
 	unless($mobilePage->content() eq $regularPage->content()){
-		$func->write("| index page reqested with an Iphone UserAgent is diferent then with a regular UserAgent. This Host may have a mobile site");
-		$func->writeHTMLValue("index page reqested with an Iphone UserAgent is diferent then with a regular UserAgent. This Host may have a mobile site");
+		$func->write("| ". $conf{'lang54'});
+		$func->writeHTMLValue($conf{'lang54'});
 	}
 #code below taken from the project web-sorrow
 ##############################################
@@ -196,8 +200,8 @@ sub fingerprint{
 	$ua->conn_cache(LWP::ConnCache->new); # use connection cacheing (faster)
 	$ua->agent("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.5) Gecko/20031027");
 	$func->write("="x99);
-	$func->write("| LANGUAGE");
-	$func->writeHTMLItem("Page Language:<br>");
+	$func->write("| ". $conf{'lang55'});
+	$func->writeHTMLItem($conf{'lang56'} .":<br>");
 	$func->write("| ".""x99);
 	# laguage checks
 	my $LangReq = $ua->get($target);
@@ -231,8 +235,8 @@ sub fingerprint{
 	$ua->conn_cache(LWP::ConnCache->new); # use connection cacheing (faster)
 	$ua->agent("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.5) Gecko/20031027");
 	$func->write("="x99);
-	$func->write("| INTERESTING STRINGS IN HTML");
-	$func->writeHTMLItem("Interesting Strings in HTML:<br>");
+	$func->write("| ". $conf{'lang57'});
+	$func->writeHTMLItem($conf{'lang58'} .":<br>");
 	$func->write("| ".""x99);
 	my @interestingStings = ('/cgi-bin','password','passwd','admin','database','payment','bank','account','twitter.com','facebook.com','login','@.*?(com|org|net|tv|uk|au|edu|mil|gov)','<!--#');
 	my $mineIndex = $ua->get($target);
@@ -478,8 +482,8 @@ sub bannergrabing(){
 
 	my ($self, $target) = @_;
 	%existe = ();
-	$func->write("| BANNER GRABBING: ");
-	$func->writeHTMLItem("Banner Grabbing:<br>");
+	$func->write("| ". $conf{'lang35'} .": ");
+	$func->writeHTMLItem($conf{'lang36'} .":<br>");
 	my $ua = LWP::UserAgent->new(conn_cache => 1);
 	$ua->conn_cache(LWP::ConnCache->new); # use connection cacheing (faster)
 	$ua->agent("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.5) Gecko/20031027");
@@ -504,18 +508,18 @@ sub bannergrabing(){
 		}
 	}
 	if($joomla == 1){
-		$func->write("| Looking for Joomla plugins: ");
-		$func->writeHTMLValue("Looking for Joomla plugins:<br>");
+		$func->write("| ". $conf{'lang37'} .": ");
+		$func->writeHTMLValue($conf{'lang37'} .":<br>");
 		$func->Check('http://' . $url . "/", "DB/joomla_plugins.db");
 	}
 	if($wordpress == 1){ 
-		$func->write("| Looking for Wordpress plugins: ");
-		$func->writeHTMLValue("Looking for Wordpress plugins:<br>");
+		$func->write("| ". $conf{'lang38'} .": ");
+		$func->writeHTMLValue($conf{'lang38'} .":<br>");
 		$func->Check('http://' . $url . "/", "DB/wp_plugins.db");
 	}
 	if($drupal == 1){ 
-		$func->write("| Looking for Drupal plugins/modules: ");
-		$func->writeHTMLValue("Looking for Drupal plugins/modules:<br>");
+		$func->write("| ". $conf{'lang39'} .": ");
+		$func->writeHTMLValue($conf{'lang39'} .":<br>");
 		$func->Check('http://' . $url . "/", "DB/drupal_plugins.db");
 	}
 	$func->write("="x99);

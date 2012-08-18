@@ -2,7 +2,11 @@ package Plugins::Crawler::webShellDisclosure;
 
 use Uniscan::Functions;
 use Thread::Semaphore;
-# this plug-in search for web backdoors while crawler is running.
+use Uniscan::Configure;
+	
+my %conf = ( );
+my $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
+%conf = $cfg->loadconf();
 
 my $func = Uniscan::Functions->new();
 our %shells : shared = ();
@@ -68,11 +72,12 @@ sub execute {
 
 sub showResults(){
 	my $self = shift;
-	$func->write("|\n| Web Backdoors:");
-	$func->writeHTMLItem("Web Backdoors:<br>");
+	$func->write("|\n| ". $conf{'lang112'} .":");
+	$func->writeHTMLItem($conf{'lang112'} .":<br>");
 	foreach my $w (keys %shells){
-		$func->write("| [+] Possible Backdoor: ". $w) if($shells{$w});
-		$func->writeHTMLValue("Possible Backdoor: ". $w);
+		$func->write("| [+] ". $conf{'lang113'} .": ". $w) if($shells{$w});
+		$func->writeHTMLValue($conf{'lang113'} .": ". $w) if($shells{$w});
+		$func->writeHTMLVul("WEBSHELL") if($shells{$w});
 	}
 }
 

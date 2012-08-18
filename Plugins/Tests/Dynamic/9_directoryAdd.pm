@@ -1,6 +1,12 @@
 package Plugins::Tests::Dynamic::9_directoryAdd;
 
 use Uniscan::Functions;
+use Uniscan::Configure;
+	
+my %conf = ( );
+my $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
+%conf = $cfg->loadconf();
+
 my $func = Uniscan::Functions->new();
 
 
@@ -31,22 +37,24 @@ sub execute(){
 		foreach my $d (@directories){
 			$d =~ s/\///g;
 			$d .= '/';
-			$d =~s/\r//g;
+			$d =~ s/\r//g;
 			chomp($d);
-			if(($d =~ /^\w+\/$/) && (length($d)>2) && (length($d)<15) && $d !~/^\d+\/$/){
+			if(($d =~ /^\w+\/$/) && (length($d)>2) && (length($d)<15) && $d !~/\d/){
 				my $e = 0;
 				foreach my $l (@line){
 					chomp $l;
+					$l =~ s/\r//g;
 					$e = 1 if($d eq $l);
 				}
 				if($e == 0){
-					$dirs{d} = 1;
+					$dirs{$d} = 1;
 					push(@line, $d);
 					$x++;
 				}
 			}
 		}
 	}
+	@urls = undef;
 	open(a, ">Directory");
 	my @dir = sort(@line);
 	foreach my $l (@dir){
@@ -54,9 +62,11 @@ sub execute(){
 		print a "$l\n";
 	}
 	close(a);
-	$func->writeHTMLItem("Learning New Directories: ");
-	$func->write("| [+] $x New directories added");
-	$func->writeHTMLValue("$x New directories added.");
+	@dir = undef;
+	@line = undef;
+	$func->writeHTMLItem($conf{'lang122'} .": ");
+	$func->write("| [+] $x ". $conf{'lang123'});
+	$func->writeHTMLValue("$x ". $conf{'lang123'} .".");
 }
 
 sub clean{

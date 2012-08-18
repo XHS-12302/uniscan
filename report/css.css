@@ -8,9 +8,14 @@ table {
 	color: #000;
 	text-decoration: none;
 	border: thin dashed #000;
+	text-align:left;
 }
 
 
+
+td {
+	text-align: center;
+}
 .centro {
 	font-family: Verdana, Geneva, sans-serif;
 	font-size: 9px;
@@ -60,6 +65,12 @@ input {
 	border: thin solid #000;
 }
 
+fieldset {
+	border:thin solid #000;	
+}
+
+
+
 select {
 	border: thin solid #000;
 }
@@ -88,15 +99,14 @@ select {
 	position:absolute;
 	left:100px;
 	top:50px;
-	width:900px;
 	z-index:1;
 }
 
 
 #div1 {
 	position:absolute;
-	left:10px;
-	top:70px;
+	left:7px;
+	top:125px;
 	width:200px;
 	height:150px;
 	z-index:1;
@@ -104,8 +114,8 @@ select {
 
 #div2 {
 	position:absolute;
-	left:230px;
-	top:70px;
+	left:264px;
+	top:124px;
 	width:400px;
 	z-index:2;
 }

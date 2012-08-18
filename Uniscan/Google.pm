@@ -3,6 +3,11 @@ package Uniscan::Google;
 use Moose;
 use Uniscan::Functions;
 use Uniscan::Http;
+use Uniscan::Configure;
+	
+my %conf = ( );
+my $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
+%conf = $cfg->loadconf();
 
 
 sub search(){
@@ -14,8 +19,8 @@ sub search(){
 	my $n = 0;
 	my $google = "";
 	my %sites = ();
-	$func->write("| [+] Google search for: $search");
-	$func->writeHTMLValue("Google search for: $search");
+	$func->write("| [+] ". $conf{'lang97'} .": $search");
+	$func->writeHTMLValue($conf{'lang97'} .": $search");
 	for($n=0; $n<200; $n+=10){
 		$google = 'http://www.google.com.ar/search?hl=es&q='. $search .'&start='. $n .'&sa=N';
 		my $response = $http->GET($google);
@@ -41,10 +46,10 @@ sub search(){
 		$i++;
 	}
 	close($file);
-	$func->write("| [+] Google returns $i sites.");
-	$func->writeHTMLValue("Google returns $i sites.");
-	$func->write("| [+] Google search finished.");
-	$func->writeHTMLValue("Google search finished.");
+	$func->write("| [+] Google ". $conf{'lang25'} ." $i sites.");
+	$func->writeHTMLValue("Google ". $conf{'lang25'} ." $i sites.");
+	$func->write("| [+] ". $conf{'lang98'} .".");
+	$func->writeHTMLValue($conf{'lang98'} .".");
 
 }
 

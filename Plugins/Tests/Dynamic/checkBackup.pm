@@ -6,6 +6,8 @@ use Thread::Queue;
 use Uniscan::Http;
 use Thread::Semaphore;
 use threads;
+use LWP::Protocol::https;
+
 
 	my $c = Uniscan::Configure->new(conffile => "uniscan.conf");
 	my $func = Uniscan::Functions->new();
@@ -30,8 +32,8 @@ sub execute(){
 
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| Backup Files:");
-	$func->writeHTMLItem("Backup Files:<br>");
+	$func->write("| ". $conf{'lang124'} .":");
+	$func->writeHTMLItem($conf{'lang124'} .":<br>");
 	my $u = "";
 	foreach (@urls){
 		if(/^https?:\/\//){
@@ -39,12 +41,13 @@ sub execute(){
 			last;
 		}
 	}
+	substr($u, index($u, '?'), length($u)) = "" if($u =~/\?/g);
 	$u = substr($u, 0, rindex($u, '/'));
 	my $req = $u . '/testing123';
 	my $r = $http->HEAD($req);
 	if($r->code !~/404/ && $conf{'force_bf'} == 0){
-		$func->write("| Skipped because $req did not return the code 404");
-		$func->writeHTMLValue("Skipped because $req did not return the code 404");
+		$func->write("| ".$conf{'lang12'}." $req ". $conf{'lang13'});
+		$func->writeHTMLValue($conf{'lang12'}." $req ". $conf{'lang13'});
 	}
 	else{
 		@urls = $func->remove(@urls) if(scalar(@urls));
@@ -52,6 +55,7 @@ sub execute(){
 		&threadnize("checkNoExist", @urls);
 		CheckBackupFiles(@bkpf);
 	}
+	
 }
 
 sub clean{
@@ -110,26 +114,15 @@ sub GetResponse(){
 		next if(not defined $url1);
 		next if($url1 !~/^https?:\/\//);
 		next if($url1 =~/#/);
-		print "[*] Remaining tests: ". $q->pending ."       \r";
-		if($url1 =~/^https:\/\//){
-			my $response = $http->GETS($url1);
-			if($response){
-				if($response =~ $conf{'code'} && $pattern !~ m/$response->content/){
-					$func->write("| [+] CODE: " .$response."\t URL: $url1");
-					$func->writeHTMLValue("CODE: " .$response." URL: $url1");
-				}
-			}
-			$response = 0;
-			
-		}
+		print "[*] ". $conf{'lang65'} .": ". $q->pending ."       \r";
 
-		else{
+
 			my $req=HTTP::Request->new(GET=>$url1);
 			my $ua=LWP::UserAgent->new(agent => $conf{'user_agent'} );
 			$ua->timeout($conf{'timeout'});
 			$ua->max_size($conf{'max_size'});
 			$ua->max_redirect(0);
-			$ua->protocols_allowed( [ 'http'] );
+			$ua->protocols_allowed( [ 'http', 'https'] );
 			if($conf{'use_proxy'} == 1){
 				$ua->proxy(['http'], 'http://'. $conf{'proxy'} . ':' . $conf{'proxy_port'} . '/');
 			}
@@ -137,11 +130,11 @@ sub GetResponse(){
 			my $response=$ua->request($req);
 			if($response){
 				if($response->code =~ $conf{'code'} && $pattern !~ m/$response->content/){
-					$func->write("| [+] CODE: " .$response->code."\t URL: $url1");
-					$func->writeHTMLValue("CODE: " .$response->code." URL: $url1");
+					print " "x35 . "\r";
+					$func->write("| [+] ".$conf{'lang84'}.": " .$response->code." URL: $url1");
+					$func->writeHTMLValue($conf{'lang84'}.": " .$response->code." URL: $url1");
 				}
 			}
-		}
 	}
 	$q->enqueue(undef);
 }
@@ -165,7 +158,7 @@ sub GetResponse(){
 	sleep(2);
 	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending ."       \r";
+		print "[*] ". $conf{'lang65'} .": ". $q->pending ."       \r";
 	}
 	@threads = ();
 }
@@ -174,18 +167,7 @@ sub GetResponse(){
 sub checkFile(){
 	my $url1 = shift;
 
-	if($url1 =~/^https:\/\//){
-        	my $http = Uniscan::Http->new();
-                my $response = $http->GETS($url1);
-                if($response){
-                	if($response =~ /200/){
-				return 1;
-			}
-			else{ return 0;}
-		}
-	}
-
-	if($url1 =~/^http:\/\//){
+	if($url1 =~/^https?:\/\//){
 	 	use HTTP::Request;
 		use LWP::UserAgent;
          
@@ -194,7 +176,7 @@ sub checkFile(){
         	$ua->timeout($conf{'timeout'});
         	$ua->max_size($conf{'max_size'});
                 $ua->max_redirect(0);
-                $ua->protocols_allowed( [ 'http'] );
+                $ua->protocols_allowed( [ 'http', 'https'] );
                 if($conf{'proxy'} ne "0.0.0.0" && $conf{'proxy_port'} != 65000){
                 	$ua->proxy(['http'], 'http://'. $conf{'proxy'} . ':' . $conf{'proxy_port'} . '/');
                	}
@@ -217,7 +199,7 @@ sub checkNoExist(){
 	while($q->pending() > 0){
 		my $url1 = $q->dequeue;
 		next if(not defined $url1);
-		print "| [*] Creating tests ". $q->pending() ."    \r";
+		print "| [*] ". $conf{'lang125'} ." ". $q->pending() ."    \r";
 		if(&checkFile($url1."adad") != 1){
 			$semaphore->down();
 			push(@bkpf, $url1);

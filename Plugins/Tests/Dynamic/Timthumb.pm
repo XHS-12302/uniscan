@@ -28,8 +28,8 @@ sub execute(){
 	my %checks = ();
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| Timthumb <= 1.32 vulnerability:");
-	$func->writeHTMLItem("Timthumb <= 1.32 vulnerability:<br>");
+	$func->write("| ".$conf{'lang138'}.":");
+	$func->writeHTMLItem($conf{'lang138'}.":<br>");
 	my $protocol;
 	my @check;
 	my @files = (
@@ -78,12 +78,13 @@ sub findtimthumb(){
 		my $url1 = $q->dequeue;
 		next if(not defined $url1);
 		next if($url1 =~/#/g);
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 		my $result = $http->GET($url1);
 		foreach my $mat (@matches){
 			if($result =~ m/$mat/gi){
 				$func->write("| [+] Timthumb $1: $url1") if($1 < 1.33);
 				$func->writeHTMLValue("Timthumb $1: $url1") if($1 < 1.33);
+				$func->writeHTMLVul("TIMTHUMB") if($1 < 1.33);
 			}
 		}
 	}
@@ -105,7 +106,7 @@ sub threadnize(){
 	sleep(2);
 	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 	}
 	@threads = ();
 }

@@ -76,8 +76,8 @@ sub execute(){
 				);
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| Local File Include:");
-	$func->writeHTMLItem("Local File Include:<br>");
+	$func->write("| ". $conf{'lang128'} .":");
+	$func->writeHTMLItem($conf{'lang128'} .":<br>");
 	&ScanLFICrawler(@urls);	
 	&ScanLFICrawlerPost(@urls);
 }
@@ -106,6 +106,7 @@ sub ScanLFICrawler(){
 sub GenerateTests(){
 	my ($test, @list) = @_;
 	my @list2 = ();
+	my %hash = ();
 	foreach my $line (@list){
 		$line =~ s/&amp;/&/g;
 		$line =~ s/\[\]//g;
@@ -122,7 +123,10 @@ sub GenerateTests(){
 						$str = urlencode($str) if($conf{'url_encode'} == 1);
 						my $t = $var_temp . $str;
 						$temp =~ s/\Q$variables[$x]\E/$t/g;
-						push(@list2, $temp);
+						if(!$hash{$temp}){
+							push(@list2, $temp);
+							$hash{$temp} = 1;
+						}
 					}
 				}
 			}
@@ -136,6 +140,7 @@ sub GenerateTests(){
 sub GenerateTestsPost(){
   	my ($test, @list) = @_;
   	my @list2 = ();
+	my %hash = ();
   	foreach my $line (@list){
 	if($line =~/#/){
   		my ($url, $line) = split('#', $line);
@@ -154,7 +159,10 @@ sub GenerateTestsPost(){
 							$str = urlencode($str) if($conf{'url_encode'} == 1);
 							my $t = $var_temp . $str;
 							$temp =~ s/\Q$variables[$x]\E/$t/g;
-							push(@list2, $url . '#' .$temp);
+							if(!$hash{$temp}){
+								push(@list2, $url . '#' .$temp);
+								$hash{$temp} = 1;
+							}
 						}
 					}
 				}
@@ -193,7 +201,7 @@ sub threadnize(){
 	sleep(2);
 	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending ."       \r";
 	}
 	@threads = ();
 }
@@ -235,12 +243,13 @@ my ($resp, $test) = 0;
 		$test = $q->dequeue;
 		next if(not defined $test);
 		next if($test =~/#/g);
-		print "[*] Remaining tests: ". $q->pending ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending ."       \r";
 		$resp = $http->GET($test);
 		if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
 			
 			$func->write("| [+] Vul [LFI] $test  ");
 			$func->writeHTMLValue($test);
+			$func->writeHTMLVul("LFI");
 		}
 		$resp = 0;
 	}
@@ -263,12 +272,13 @@ sub TestLFIPost(){
 		next if(not defined $test);
 		if($test =~ /#/){
 			my ($url, $data) = split('#', $test);
-			print "[*] Remaining tests: ". $q->pending ."       \r";
+			print "[*] ".$conf{'lang65'}.": ". $q->pending ."       \r";
 			my $resp = $http->POST($url, $data);
 			if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
 				
-				$func->write("| [+] Vul [LFI] $url               \n| Post data: $data               ");
-				$func->writeHTMLValue($url."<br>Post data: $data");
+				$func->write("| [+] Vul [LFI] $url               \n| ". $conf{'lang130'}.": $data               ");
+				$func->writeHTMLValue($url."<br>".$conf{'lang130'}.": $data");
+				$func->writeHTMLVul("BSQL-I");
 			}
 			$resp = 0;
 		}

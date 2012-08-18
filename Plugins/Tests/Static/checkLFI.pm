@@ -27,8 +27,8 @@ sub execute(){
 
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| LFI:");
-	$func->writeHTMLItem("Local File Include:<br>");
+	$func->write("| ".$conf{'lang128'}.":");
+	$func->writeHTMLItem($conf{'lang128'} .":<br>");
     &ScanStaticLFI($url);
 	}
 
@@ -63,7 +63,7 @@ sub threadnize(){
 	sleep(2);
 	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 	}
 	@threads = ();
 }
@@ -89,12 +89,13 @@ my ($resp, $test) = 0;
 	while($q->pending > 0){
 		$test = $q->dequeue;
 		next if(not defined $test);
-		print "[*] Remaining tests: ". $q->pending ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending ."       \r";
 		$resp = $http->GET($test);
 		if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
 			
 			$func->write("| [+] Vul [LFI] $test");
 			$func->writeHTMLValue($test);
+			$func->writeHTMLVul("LFI");
 		}
 		$resp = 0;
 	}

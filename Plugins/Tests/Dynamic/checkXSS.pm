@@ -47,8 +47,8 @@ sub execute(){
 
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| Cross-Site Scripting (XSS):");
-	$func->writeHTMLItem("Cross-Site Scripting (XSS):<br>");
+	$func->write("| ".$conf{'lang133'}.":");
+	$func->writeHTMLItem($conf{'lang133'} .":<br>");
 	&ScanXSSCrawler(@urls);	
 	&ScanXSSCrawlerPost(@urls);
 }
@@ -81,13 +81,14 @@ sub TestXSS(){
 		my $test = $q->dequeue;
 		next if(not defined $test);
 		next if($test =~/#/g);
-		print "[*] Remaining tests: ". $q->pending ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending ."       \r";
 		my $resp = $http->GET($test);
 		if($resp =~ m/<[\w|\s|\t|\n|\r|'|"|\?|\[|\]|\(|\)|\*|&|%|\$|#|@|!|\|\/|,|\.|;|:|\^|~|\}|\{|\+|\-|=|_]+>[_|=|\w|\s|\t|\n|\r|'|"|\?|\[|\]|\(|\)|\*|&|%|\$|#|@|!|\|\/|,|\.|;|:|\^|~|\}|\{|\+|\-]*(<script>alert\('XSS'\)<\/script>|<XSS>|<IMG SRC=\"javascript:alert\('XSS'\);\">|<IMG SRC=javascript:alert\(&quot;XSS&quot;\)>|<IMG SRC=javascript:alert\(String.fromCharCode\(88,83,83\)\)>|<IMG SRC=javascript:alert('XSS')>|<IMG SRC=\"javascript:alert\('XSS'\)\">|<LINK REL=\"stylesheet\" HREF=\"javascript:alert\('XSS'\);\">|<IMG SRC='vbscript:msgbox\(\"XSS\"\)'>|<META HTTP-EQUIV=\"refresh\" CONTENT=\"0; URL=http:\/\/;URL=javascript:alert\('XSS'\);\">|<DIV STYLE=\"background-image: url\(javascript:alert\('XSS'\)\)\">|<body onload=\"javascript:alert\('XSS'\)\"><\/body>|<table background=\"javascript:alert\('XSS'\)\"><\/table>).*</i){
 			$func->write("| [+] Vul [XSS] $test               ");
 			$test =~s/</&lt;/g;
 			$test =~s/>/&gt;/g;
 			$func->writeHTMLValue($test);
+			$func->writeHTMLVul("XSS");
 		}
 		$resp = 0;
 	}
@@ -102,13 +103,14 @@ sub TestXSSPost(){
 		next if(not defined $test);
 		next if($test !~/#/g);
 		my ($url, $data) = split('#', $test);
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 		my $resp = $http->POST($url, $data);
 		if($resp =~ m/<[\w|\s|\t|\n|\r|'|"|\?|\[|\]|\(|\)|\*|&|%|\$|#|@|!|\|\/|,|\.|;|:|\^|~|\}|\{|\+|\-|=|_]+>[_|=|\w|\s|\t|\n|\r|'|"|\?|\[|\]|\(|\)|\*|&|%|\$|#|@|!|\|\/|,|\.|;|:|\^|~|\}|\{|\+|\-]*(<script>alert\('XSS'\)<\/script>|<XSS>|<IMG SRC=\"javascript:alert\('XSS'\);\">|<IMG SRC=javascript:alert\(&quot;XSS&quot;\)>|<IMG SRC=javascript:alert\(String.fromCharCode\(88,83,83\)\)>|<IMG SRC=javascript:alert('XSS')>|<IMG SRC=\"javascript:alert\('XSS'\)\">|<LINK REL=\"stylesheet\" HREF=\"javascript:alert\('XSS'\);\">|<IMG SRC='vbscript:msgbox\(\"XSS\"\)'>|<META HTTP-EQUIV=\"refresh\" CONTENT=\"0; URL=http:\/\/;URL=javascript:alert\('XSS'\);\">|<DIV STYLE=\"background-image: url\(javascript:alert\('XSS'\)\)\">|<body onload=\"javascript:alert\('XSS'\)\"><\/body>|<table background=\"javascript:alert\('XSS'\)\"><\/table>).*</i){
-			$func->write("| [+] Vul [XSS] $url               \n| Post data: $data               ");
+			$func->write("| [+] Vul [XSS] $url               \n| ".$conf{'lang129'}.": $data               ");
 			$data =~s/</&lt;/g;
 			$data =~s/>/&gt;/g;
-			$func->writeHTMLValue($url."<br>Post data: $data");
+			$func->writeHTMLValue($url."<br>".$conf{'lang129'}.": $data");
+			$func->writeHTMLVul("XSS");
 		}
 		$resp = 0;
 	}
@@ -210,7 +212,7 @@ sub GenerateTestsPost(){
 	sleep(2);
 	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 	}
 	@threads = ();
 }

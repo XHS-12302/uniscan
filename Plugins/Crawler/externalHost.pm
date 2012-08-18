@@ -3,9 +3,14 @@ package Plugins::Crawler::externalHost;
 use Uniscan::Functions;
 use URI;
 use  Thread::Semaphore;
-	my $func = Uniscan::Functions->new();
-	our %external : shared = ();
-	my $semaphore = Thread::Semaphore->new();
+use Uniscan::Configure;
+	
+my %conf = ( );
+my $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
+%conf = $cfg->loadconf();
+my $func = Uniscan::Functions->new();
+our %external : shared = ();
+my $semaphore = Thread::Semaphore->new();
 
 sub new {
     my $class    = shift;
@@ -51,11 +56,11 @@ sub execute {
 
 sub showResults(){
 	my $self = shift;
-	$func->write("|\n| External hosts:");
-	$func->writeHTMLItem("External hosts:<br>");
-	foreach my $url (%external){
-		$func->write("| [+] External Host Found: ". $url . " " . $external{$url} . "x times") if($external{$url});
-		$func->writeHTMLValue("External Host Found: ". $url) if($external{$url});
+	$func->write("|\n| ". $conf{'lang104'} .":");
+	$func->writeHTMLItem($conf{'lang104'} .":<br>");
+	foreach my $url (keys %external){
+		$func->write("| [+] ". $conf{'lang105'} .": ". $url) if($external{$url});
+		$func->writeHTMLValue($url) if($external{$url});
 	}
 }
 

@@ -12,6 +12,10 @@ use HTTP::Cookies;
 use LWP::UserAgent;
 use LWP::Simple;
 use LWP::ConnCache;
+	
+my %conf = ( );
+my $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
+%conf = $cfg->loadconf();
 
 
 my $func = Uniscan::Functions->new();
@@ -45,8 +49,8 @@ sub fingerprintServer{
 ##############################################
 
 	$func->write("="x99);
-	$func->write("| TRACEROUTE");
-	$func->writeHTMLItem("Traceroute:<br>");
+	$func->write("| ". $conf{'lang59'});
+	$func->writeHTMLItem($conf{'lang60'} .":<br>");
 	$func->write("| ".""x99);
 	my @traceroute = `traceroute $url`;
 	foreach $i (@traceroute) {
@@ -60,8 +64,8 @@ sub fingerprintServer{
 ##############################################
 
 	$func->write("="x99);
-	$func->write("| NSLOOKUP");
-	$func->writeHTMLItem("Nslookup:<br>");
+	$func->write("| ". $conf{'lang61'});
+	$func->writeHTMLItem($conf{'lang62'} .":<br>");
 	$func->write("| ");
 
 	@nslookup = `nslookup -type=MX $url`;
@@ -107,8 +111,8 @@ sub fingerprintServer{
 ##############################################
 
 	$func->write("="x99);
-	$func->write("| NMAP");
-	$func->writeHTMLItem("Nmap:<br>");
+	$func->write("| ". $conf{'lang63'});
+	$func->writeHTMLItem($conf{'lang64'} .":<br>");
 	$func->write("| ".""x99);
 	my @nmap = `nmap -v -A $url`;
 	foreach my $i (@nmap) {

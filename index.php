@@ -1,11 +1,5 @@
 <?php
-
-
-
-
-
-
-
+error_reporting(E_ERROR | E_WARNING | E_PARSE);	
 $action = $_GET["action"];
 
 if($action == "scan"){
@@ -58,34 +52,36 @@ else{
 </head>
 
 <body>
-<div id="div1" style="border:dotted">
-  <p><center>Search Engine</center></p>
-  <form action="index.php?action=search" method="post">
-  <p>Google Search: <input type="text" name="google" /></p>
-  <p>Bing Search:<input type="text" name="bing" /></p>
-  <p><input type="submit" value="Send" /><input type="reset" value="Reset"></form></p>
-</div>
-
-<div id="div2" style="border:dotted">
-<p><center>Scan Options</center></p>
-<form action="index.php?action=scan" method="post">
-<input type="checkbox" name="options[]" value=" -q" checked="checked" /> Directory Check<br>
-<input type="checkbox" name="options[]" value=" -w" checked="checked" /> File Check<br>
-<input type="checkbox" name="options[]" value=" -e" checked="checked" /> /robots.txt Check<br>
-<input type="checkbox" name="options[]" value=" -d" checked="checked" /> Dynamic Tests<br>
-<input type="checkbox" name="options[]" value=" -s" checked="checked" /> Static Tests<br>
-<input type="checkbox" name="options[]" value=" -r" checked="checked" /> Stress Tests<br>
-<input type="checkbox" name="options[]" value=" -g" checked="checked" /> Web Server Information<br>
-<input type="checkbox" name="options[]" value=" -j" checked="checked" /> Server Information<br><br>
-
-</div>
-
-<div id="div3">Target:<br>
-URL: <input type="text" name="url" value="http://www.site.com/" /><br><br><br><br><br><br><br><br><br>	
-<input type="submit" value="Start Scan" />
-<input type="reset" value="Reset">
-</form>
-</div>
+<center><img src="report/images/logo.png"></center><br>
+<center><a href="report/index.php">See reports</a></center><br><br><br>
+   		<form action="index.php?action=search" method="post">
+        <fieldset>
+        <legend>Search Engine</legend>
+        <label for="google">Google:<input id="google" type="text" name="google" /></label>
+  		<label for="bing">Bing:<input id="bing" type="text" name="bing" /></label>
+  		<input type="submit" value="Send" /><input type="reset" value="Reset">
+        </fieldset>
+        </form>
+<br><br>
+		<form action="index.php?action=scan" method="post">
+        <fieldset>
+        <legend>Scan Options</legend>
+		<label for="dir"><input id="dir" type="checkbox" name="options[]" value=" -q" checked="checked" /> Directory Check</label>
+		<label for="fil"><input id="fil" type="checkbox" name="options[]" value=" -w" checked="checked" /> File Check</label>
+		<label for="rob"><input id="rob" type="checkbox" name="options[]" value=" -e" checked="checked" /> /robots.txt Check</label>
+		<label for="dyn"><input id="dyn" type="checkbox" name="options[]" value=" -d" checked="checked" /> Dynamic Tests</label>
+		<label for="sta"><input id="sta" type="checkbox" name="options[]" value=" -s" checked="checked" /> Static Tests</label>
+		<label for="str"><input id="str" type="checkbox" name="options[]" value=" -r" checked="checked" /> Stress Tests</label>
+		<label for="web"><input id="web" type="checkbox" name="options[]" value=" -g" checked="checked" /> Web Server Information</label>
+		<label for="ser"><input id="ser" type="checkbox" name="options[]" value=" -j" checked="checked" /> Server Information</label>
+        </fieldset>
+        <fieldset>
+		<legend>Target:</legend>
+        <label for="ur">URL:<input id="ur" type="text" name="url" value="http://www.site.com/" /></label>
+		<input type="submit" value="Start Scan" />
+		<input type="reset" value="Reset">
+        </fieldset>
+		</form>
 </body>
 </html>
 

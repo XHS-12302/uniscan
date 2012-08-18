@@ -60,8 +60,8 @@ sub execute(){
 
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| Remote Command Execution:");
-	$func->writeHTMLItem("Remote Command Execution:<br>");
+	$func->write("| ". $conf{'lang131'} .":");
+	$func->writeHTMLItem($conf{'lang131'} .":<br>");
 	&ScanRCECrawler(@urls);	
 	&ScanRCECrawlerPost(@urls);
 }
@@ -91,11 +91,12 @@ sub TestRCE(){
 		my $test = $q->dequeue;
 		next if(not defined $test);
 		next if($test =~/#/g);
-		print "[*] Remaining tests: ". $q->pending ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending ."       \r";
 		my $resp = $http->GET($test);
 		if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
 			$func->write("| [+] Vul [RCE] $test               ");
 			$func->writeHTMLValue($test);
+			$func->writeHTMLVul("RCE");
 		}
 		$resp = 0;
 	}
@@ -109,11 +110,12 @@ sub TestRCEPost(){
 		next if(not defined $test);
 		next if($test !~/#/g);
 		my ($url, $data) = split('#', $test);
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ". $conf{'lang65'}.": ". $q->pending  ."       \r";
 		my $resp = $http->POST($url, $data);
 		if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
-			$func->write("| [+] Vul [RCE] $url               \n| Post data: $data               ");
-			$func->writeHTMLValue($url."<br>Post data: $data");
+			$func->write("| [+] Vul [RCE] $url               \n| ". $conf{'lang129'} .": $data               ");
+			$func->writeHTMLValue($url."<br>". $conf{'lang129'} .": $data");
+			$func->writeHTMLVul("RCE");
 		}
 		$resp = 0;
 	}
@@ -209,7 +211,7 @@ sub threadnize(){
 	sleep(2);
 	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 	}
 	@threads = ();
 }

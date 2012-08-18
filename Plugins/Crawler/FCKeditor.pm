@@ -4,6 +4,11 @@ use IO::Socket::INET;
 use Uniscan::Functions;
 use URI;
 use Thread::Semaphore;
+use Uniscan::Configure;
+	
+my %conf = ( );
+my $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
+%conf = $cfg->loadconf();
 my $func = Uniscan::Functions->new();
 our %upload : shared = ();
 my $semaphore = Thread::Semaphore->new();
@@ -79,11 +84,12 @@ if($content =~/<title>FCKeditor|FCKeditor - The text editor for internet/i && $c
 # crawler will call this method after crawled target
 sub showResults(){
     my $self = shift;
-    $func->write("|\n| FCKeditor File Upload:");
-    $func->writeHTMLItem("FCKeditor File Upload:<br>");
+    $func->write("|\n| ". $conf{'lang106'} .":");
+    $func->writeHTMLItem($conf{'lang106'} .":<br>");
     foreach my $url (keys %upload){
-        $func->write("| [+] Upload Form: ". $url . " File saved: " . $upload{$url}) if($upload{$url});
-	$func->writeHTMLValue("Upload Form: ". $url. " File saved: " . $upload{$url}) if($upload{$url});
+        $func->write("| [+] ". $conf{'lang107'} .": ". $url . " ". $conf{'lang108'} .": " . $upload{$url}) if($upload{$url});
+	$func->writeHTMLValue($conf{'lang107'} .": ". $url. " ". $conf{'lang108'} .": " . $upload{$url}) if($upload{$url});
+	$func->writeHTMLVul("FCKEDITOR") if($upload{$url});
     }
 }
 

@@ -29,8 +29,8 @@ sub execute(){
 	);
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| SQL Injection:");
-	$func->writeHTMLItem("SQL Injection:<br>");
+	$func->write("| ". $conf{'lang132'} .":");
+	$func->writeHTMLItem($conf{'lang132'} .":<br>");
 	&ScanSQLCrawler(@urls);	
 	&ScanSQLCrawlerPost(@urls);
 }
@@ -60,11 +60,12 @@ sub TestSQL(){
 		my $test = $q->dequeue;
 		next if(not defined $test);
 		if($test !~/#/){
-			print "[*] Remaining tests: ". $q->pending  ."       \r";
+			print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 			my $resp = $http->GET($test);
 			if($resp =~/You have an error in your SQL syntax|Microsoft OLE DB Provider for ODBC Drivers|Supplied argument is not a valid .* result|Unclosed quotation mark after the character string/i){
 				$func->write("| [+] Vul [SQL-i] $test               ");
 				$func->writeHTMLValue($test);
+				$func->writeHTMLVul("SQL-I");
 			}
 			$resp = 0;
 		}
@@ -79,11 +80,12 @@ sub TestSQLPost(){
 		next if(not defined $test);
 		if($test =~/#/){
 			my ($url, $data) = split('#', $test);
-			print "[*] Remaining tests: ". $q->pending  ."       \r";
+			print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 			my $resp = $http->POST($url, $data);
 			if($resp =~/You have an error in your SQL syntax|Microsoft OLE DB Provider for ODBC Drivers|Supplied argument is not a valid .* result|Unclosed quotation mark after the character string/i){
-				$func->write("| [+] Vul [SQL-i] $url               \n| Post data: $data               ");
-				$func->writeHTMLValue($url."<br>Post data: $data");
+				$func->write("| [+] Vul [SQL-i] $url               \n| ".$conf{'lang129'}.": $data               ");
+				$func->writeHTMLValue($url."<br>".$conf{'lang129'}.": $data");
+				$func->writeHTMLVul("SQL-I");
 			}
 			$resp = 0;
 		}
@@ -180,7 +182,7 @@ sub status(){
 	sleep(2);
 	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ". $conf{'lang65'}.": ". $q->pending  ."       \r";
 	}
 	@threads = ();
 }

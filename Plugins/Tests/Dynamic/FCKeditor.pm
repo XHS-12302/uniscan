@@ -33,8 +33,8 @@ sub execute(){
 	my ($self,@urls) = @_;
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| FCKeditor tests:");
-	$func->writeHTMLItem("FCKeditor Tests:<br>");
+	$func->write("| ".$conf{'lang137'}.":");
+	$func->writeHTMLItem($conf{'lang137'} .":<br>");
 	my $u = "";
 	foreach (@urls){
 		if(/^https?:\/\//){
@@ -42,12 +42,13 @@ sub execute(){
 			last;
 		}
 	}
+	substr($u, index($u, '?'), length($u)) = "" if($u =~/\?/g);
 	$u = substr($u, 0, rindex($u, '/'));
 	my $req = $u . '/testing123';
 	my $res = $http->HEAD($u . '/testing123');
 	if($res->code !~ /404/ && $conf{'force_bf'} == 0){
-		$func->write("| Skipped because $req did not return the code 404");
-		$func->writeHTMLValue("Skipped because $req did not return the code 404");
+		$func->write("| ".$conf{'lang12'}." $req ". $conf{'lang13'});
+		$func->writeHTMLValue($conf{'lang12'}." $req ". $conf{'lang13'});
 	}
 	else {
 		foreach my $url (@urls){
@@ -136,20 +137,8 @@ sub status(){
 
 sub checkFile(){
 	my $url1 = shift;
-	if($url1 =~/^https:\/\//){
-        	my $http = Uniscan::Http->new();
-                my $response = $http->GETS($url1);
-		if($response){
-			if($response =~ /200|302/){
-				return 1;
-			}
-			else{ 
-				return 0;
-			}
-		}
-	}
 
-	elsif($url1 =~/^http:\/\//){
+	if($url1 =~/^https?:\/\//){
 		
 	 	use HTTP::Request;
 		use LWP::UserAgent;
@@ -158,7 +147,7 @@ sub checkFile(){
         	$ua->timeout($conf{'timeout'});
         	$ua->max_size($conf{'max_size'});
                 $ua->max_redirect(0);
-                $ua->protocols_allowed( [ 'http'] );
+                $ua->protocols_allowed( [ 'http', 'https'] );
                 if($conf{'use_proxy'} == 1){
                 	$ua->proxy(['http'], 'http://'. $conf{'proxy'} . ':' . $conf{'proxy_port'} . '/');
                	}
@@ -181,7 +170,7 @@ sub checkNoExist(){
 		my $url1 = $q->dequeue;
 		next if(not defined $url1);
 		next if($url1 =~/#/g);
-		print "| [*] Looking for FCKeditor directories ". $q->pending() ."    \r";
+		print "| [*] ".$conf{'lang134'}." ". $q->pending() ."    \r";
 		if(&checkFile($url1) == 1){
 			$semaphore->down();
 			push(@fck, $url1);
@@ -199,7 +188,7 @@ sub Upload(){
 		next if(!$url);
 		next if($url =~/#/g);
 		next if($url !~/^https?:\/\//);
-		print "| [*] Testing FCKeditor directories ". $q->pending() ."    \r";
+		print "| [*] ".$conf{'lang135'}." ". $q->pending() ."    \r";
 		my $host = &host($url);
 		my $temp = $url;
 		$temp =~ s/https?:\/\///g;
@@ -234,8 +223,9 @@ sub Upload(){
 		my $path_file = $2;
 		my $file_name = $3;
 		if($code == 201 && $path_file =~/uniscan/ && $file_name=~/uniscan/){
-			$func->write("| [+] http://" . $host . $path . " was saved on http://" . $host. $path_file);
-			$func->writeHTMLValue("http://" . $host . $path . " was saved on http://" . $host. $path_file);
+			$func->write("| [+] http://" . $host . $path . " ".$conf{'lang136'}." http://" . $host. $path_file);
+			$func->writeHTMLValue("http://" . $host . $path . " ".$conf{'lang136'}." http://" . $host. $path_file);
+			$func->writeHTMLVul("FCKEDITOR");
 		}
 	}
 	$q->enqueue(undef);

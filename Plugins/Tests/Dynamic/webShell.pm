@@ -30,8 +30,8 @@ sub execute(){
 	my %checks = ();
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| Web Shell Finder:");
-	$func->writeHTMLItem("Web Shell Finder:<br>");
+	$func->write("| ".$conf{'lang139'}.":");
+	$func->writeHTMLItem($conf{'lang139'}.":<br>");
 	my $protocol;
 	my @check;
 	my @files = (
@@ -148,12 +148,13 @@ sub findShell(){
 		my $url1 = $q->dequeue;
 		next if(not defined $url1);
 		next if($url1 =~/#/g);
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 		my $result = $http->GET($url1);
 		foreach my $mat (@matches){
 			if($result =~ m/$mat/gi){
-				$func->write("| [+] Possible WebShell: $url1");
-				$func->writeHTMLValue("Possible WebShell: $url1");
+				$func->write("| [+] ".$conf{'lang140'}.": $url1");
+				$func->writeHTMLValue($conf{'lang140'}.": $url1");
+				$func->writeHTMLVul("WEBSHELL");
 			}
 		}
 	}
@@ -175,7 +176,7 @@ sub threadnize(){
 	sleep(2);
 	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 	}
 	@threads = ();
 }

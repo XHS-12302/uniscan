@@ -3,6 +3,11 @@
 	use Moose;
 	use Uniscan::Http;
 	use Uniscan::Functions;
+	use Uniscan::Configure;
+	
+	my %conf = ( );
+	my $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
+	%conf = $cfg->loadconf();
 	
 	
 	sub search(){
@@ -14,8 +19,8 @@
 		my $y = 701;
 		my ($bing, $response) = "";
 		my %sites = ();
-		$func->write("| [+] Bing search for: $search");
-		$func->writeHTMLValue("Bing search for: $search");
+		$func->write("| [+] ". $conf{'lang27'} .": $search");
+		$func->writeHTMLValue($conf{'lang27'} .": $search");
 		for($x=0; $x <= $y; $x+=10){
 			$bing = 'http://www.bing.com/search?q='.$search.'&first='.$x.'&FORM=PORE';
 			$response = $http->GET($bing);
@@ -37,10 +42,10 @@
 			print $file "http://$key/\n";
 		}
 		close($file);
-		$func->write("| [+] Bing returns $i sites.");
-		$func->writeHTMLValue("Bing returns $i sites.");
-		$func->write("| [+] Bing search finished.");
-		$func->writeHTMLValue("Bing search finished.");
+		$func->write("| [+] Bing ". $conf{'lang25'} ." $i sites.");
+		$func->writeHTMLValue("Bing" . $conf{'lang25'} ." $i sites.");
+		$func->write("| [+] ". $conf{'lang26'} .".");
+		$func->writeHTMLValue( $conf{'lang26'} .".");
 	}
 	
 	

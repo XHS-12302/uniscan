@@ -26,8 +26,8 @@ sub execute(){
 
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| RCE:");
-	$func->writeHTMLItem("Remote Command Execution:<br>");
+	$func->write("| ".$conf{'lang131'}.":");
+	$func->writeHTMLItem($conf{'lang131'} .":<br>");
     &ScanStaticRCE($url);
 	}
 
@@ -62,7 +62,7 @@ sub threadnize(){
 	sleep(2);
 	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 	}
 	@threads = ();
 }
@@ -86,12 +86,13 @@ sub TestRCE(){
 	while($q->pending > 0){
 		my $test = $q->dequeue;
 		next if(not defined $test);
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 		my $resp = $http->GET($test);
 		if($resp =~/root:x:0:0:root/ || ($resp =~/boot loader/ && $resp =~/operating systems/ && $resp =~/WINDOWS/)){
 			
 			$func->write("| [+] Vul [RCE] $test");
 			$func->writeHTMLValue($test);
+			$func->writeHTMLVul("RCE");
 		}
 		$resp = 0;
 	}

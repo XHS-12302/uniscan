@@ -35,9 +35,10 @@ sub GetServerInfo(){
 	my ($self, $url) = @_;
 	my $http = Uniscan::Http->new();
 	my $response = $http->HEAD($url);
-	&writeHTMLItem("self", "Server Banner:") if($response->server);
+	&writeHTMLItem("self", $conf{'lang82'} .":") if($response->server);
 	&writeHTMLValue("self", $response->server) if($response->server);
-	&write('ae', "| Server: ". $response->server) if($response->server);	
+	&write('ae', "| ". $conf{'lang83'} .": ". $response->server) if($response->server);
+	
 }
 
 
@@ -49,14 +50,13 @@ sub GetServerInfo(){
 #
 #
 #  Param: $url
-#  Return: $ip
+#  Return: ip
 ##############################################
 
 
 sub GetServerIp(){
 	my ($self, $url) = @_;
-	$url =~ s/http:\/\///g if($url =~/http:\/\//);
-	$url =~ s/https:\/\///g if($url =~/https:\/\//);
+	$url =~ s/https?:\/\///g if($url =~/https?:\/\//);
 	$url = substr($url, 0, index($url, '/'));
 	$url = substr($url, 0, index($url, ':')) if($url =~/:/); 
 	return(join(".", unpack("C4", (gethostbyname($url))[4])));
@@ -101,7 +101,7 @@ sub Check(){
 	
 	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending ."       \r";
+		print "[*] ". $conf{'lang65'} .": ". $q->pending ."       \r";
 	}
 return @list;
 }
@@ -119,42 +119,24 @@ return @list;
 
 
 sub GetResponse(){
-	my $http = Uniscan::Http->new();
+	
 	while($q->pending()){
 		my $url1 = $q->dequeue;
+		my $http = Uniscan::Http->new();
 		next if(not defined $url1);
-		print "[*] Remaining tests: ". $q->pending ."       \r";
-		if($url1 =~/^https:\/\//){
-			my $response = $http->GETS($url1);
-			if($response){
-				$response =~ s/\r|\n//g;
-				$url1 =~ s/\r|\n//g;
-				if($response =~ $conf{'code'} && $pattern !~ m/$response->content/){
-					$semaphore->down();
-					push(@list, $url1);
-					$semaphore->up();
-					&write('', "| [+] CODE: " .$response." URL: $url1");
-					&writeHTMLValue('', "CODE: $response URL: $url1");
-				}
-			}
-			$http = 0;
-			$response = 0;
-			
-		}
-
-		else{
+		print "[*] ". $conf{'lang65'} .": ". $q->pending ."       \r";
 			my $response=$http->HEAD($url1);
 			if($response){
 				if($response->code =~ $conf{'code'}){
 					$semaphore->down();
 					push(@list, $url1);
 					$semaphore->up();
-					&write('', "| [+] CODE: " .$response->code."\t URL: $url1");
-					&writeHTMLValue("", "CODE: " .$response->code." URL: $url1");
+					print " "x40 . "\r";
+					&write('', "| [+] ". $conf{'lang84'} .": " .$response->code." URL: $url1");
+					&writeHTMLValue("", $conf{'lang84'} .": " .$response->code." URL: $url1");
 				}
 			}
 			$response = 0;
-		}
 	}
 	$q->enqueue(undef);
 }
@@ -277,19 +259,19 @@ sub get_url(){
 ##############################################
 
 sub remove{
-	return keys %{{ map { $_ => 1 } @_ }};
-#   	my @si = @_;
-#   	my @novo = ();
-#   	my %ss;
-#  	foreach my $s (@si)
-#   	{
-#        	if (!$ss{$s})
-#        	{
-#            		push(@novo, $s);
-#            		$ss{$s} = 1;
-#        	}
-#    	}
-#    	return (@novo);
+	
+   	my @si = @_;
+   	my @novo = ();
+   	my %ss;
+  	foreach my $s (@si)
+   	{
+        	if (!$ss{$s})
+        	{
+            		push(@novo, $s);
+            		$ss{$s} = 1;
+        	}
+    	}
+    	return @novo;
 }
 
 
@@ -322,23 +304,23 @@ sub check_url(){
 
 sub help(){
 	my $self = shift;
-	print 	"OPTIONS:\n".
-		"\t-h \thelp\n".
-		"\t-u \t<url> example: https://www.example.com/\n".
-		"\t-f \t<file> list of url's\n".
-		"\t-b \tUniscan go to background\n".
-		"\t-q \tEnable Directory checks\n".
-		"\t-w \tEnable File checks\n".
-		"\t-e \tEnable robots.txt check\n".
-		"\t-d \tEnable Dynamic checks\n".
-		"\t-s \tEnable Static checks\n".
-		"\t-r \tEnable Stress checks\n".
-		"\t-i \t<dork> Bing search\n".
-		"\t-o \t<dork> Google search\n".
-		"\t-g \tWeb fingerprint\n".
-		"\t-j \tServer fingerprint\n".
+	print 	$conf{'lang66'} .":\n".
+		"\t-h \t". $conf{'lang67'} ."\n".
+		"\t-u \t". $conf{'lang68'} ."\n".
+		"\t-f \t". $conf{'lang69'} ."\n".
+		"\t-b \t". $conf{'lang70'} ."\n".
+		"\t-q \t". $conf{'lang71'} ."\n".
+		"\t-w \t". $conf{'lang72'} ."\n".
+		"\t-e \t". $conf{'lang73'} ."\n".
+		"\t-d \t". $conf{'lang74'} ."\n".
+		"\t-s \t". $conf{'lang75'} ."\n".
+		"\t-r \t". $conf{'lang76'} ."\n".
+		"\t-i \t". $conf{'lang77'} ."\n".
+		"\t-o \t". $conf{'lang78'} ."\n".
+		"\t-g \t". $conf{'lang79'} ."\n".
+		"\t-j \t". $conf{'lang80'} ."\n".
 		"\n".
-		"usage: \n".
+		$conf{'lang81'} .": \n".
 		"[1] perl $0 -u http://www.example.com/ -qweds\n".
 		"[2] perl $0 -f sites.txt -bqweds\n".
 		"[3] perl $0 -i uniscan\n".
@@ -381,9 +363,9 @@ sub date{
 	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
 	$year += 1900;
 	$mon++;
-	&writeHTMLCategory("self", "SCAN TIME");
-	&writeHTMLItem("self", "Scan Started:") if($c == 0);
-	&writeHTMLItem("self", "Scan Finished:") if($c == 1);
+	&writeHTMLCategory("self", $conf{'lang85'});
+	&writeHTMLItem("self", $conf{'lang86'} .":") if($c == 0);
+	&writeHTMLItem("self", $conf{'lang87'} .":") if($c == 1);
 	&writeHTMLValue("$self", "$mday/$mon/$year $hour:$min:$sec");
 	&writeHTMLCategoryEnd();
 	return "$mday-$mon-$year $hour:$min:$sec";
@@ -393,11 +375,11 @@ sub date{
 sub CheckUpdate(){
 	my $self = shift;
 	my $h = Uniscan::Http->new();
-	my $response = $h->GET("http://uniscan.sourceforge.net/version.txt");
+	my $response = $h->GET("http://uniscan.sourceforge.net/version.txt") or die("$!\n");
 	chomp $response;
-	if($response != $conf{'version'} && $response =~ /^\d+\.\d+$/){
-		&write("self", "New version $response is avaliable");
-		&write("self", "More details in http://uniscan.sourceforge.net/\n\n");
+	if($response ne $conf{'version'} && $response =~ /^\d+[\.\d+]+$/){
+		&write("self", $conf{'lang88'} ." $response ". $conf{'lang89'});
+		&write("self", $conf{'lang90'} ." http://uniscan.sourceforge.net/\n\n");
 		update() if($conf{'autoupdate'} == 1);
 		
 	}
@@ -432,12 +414,12 @@ sub CheckRedirect(){
 		my $u2 = $1;
 		$url =~ s/$u1/$u2/g;
 		&write("ae", "="x99);
-		&writeHTMLItem("self", "Redirect Detected:");
-		&writeHTMLValue("self",  $request->url ." redirected to " . $url);
-		&writeHTMLItem("self", "New target is:");
+		&writeHTMLItem("self", $conf{'lang91'} .":");
+		&writeHTMLValue("self",  $request->url ." ". $conf{'lang92'} ." " . $url);
+		&writeHTMLItem("self", $conf{'lang93'} .":");
 		&writeHTMLValue("self",  $url);
-		&write("ae", "| [*] ". $request->url ." redirected to " . $url);
-		&write("ae", "| [*] New target is: $url");
+		&write("ae", "| [*] ". $request->url ." ". $conf{'lang92'} ." " . $url);
+		&write("ae", "| [*] ". $conf{'lang93'} .": $url");
 	}
 	return $url;
 }
@@ -453,7 +435,8 @@ sub createHTML(){
 			<title>Uniscan Report</title>
 			<link href="css.css" rel="stylesheet" />
 			</head>
-			<body id="div0">
+			<body>
+			<center><img src="images/logo.png"></center><br />
 			';
 	close($html);
 	$semaphore->up();
@@ -471,7 +454,8 @@ sub createHTMLRedirect(){
 			<title>Uniscan Report</title>
 			<link href="css.css" rel="stylesheet" />
 			</head>
-			<body id="div0">
+			<body>
+			<center><img src="images/logo.png"></center><br>
 			';
 	close($html);
 	$semaphore->up();
@@ -481,7 +465,7 @@ sub writeHTMLCategory(){
 	my ($self, $content) = @_;
 	$semaphore->down();
 	open(my $html, ">>", $conf{'html_report'});
-	print $html "<br><br><br><br><br><center>$content</center>\n<hr>\n";
+	print $html "<br><br><fieldset>\n<legend>$content</legend>\n";
 	close($html);
 	$semaphore->up();
 }
@@ -490,7 +474,7 @@ sub writeHTMLCategoryEnd(){
 	my ($self, $content) = @_;
 	$semaphore->down();
 	open(my $html, ">>", $conf{'html_report'});
-	print $html "<hr>\n";
+	print $html "</fieldset>\n";
 	close($html);
 	$semaphore->up();
 }
@@ -515,6 +499,17 @@ sub writeHTMLValue(){
 }
 
 
+sub writeHTMLVul(){
+	my ($self, $cont) = @_;
+	$semaphore->down();
+	open(my $html, ">>", $conf{'html_report'});
+	print $html "<a name='$cont' id='$cont'></a>";
+	print $html "\n<!--$cont-->\n";
+	close($html);
+	$semaphore->up();
+}
+
+
 
 sub writeHTMLEnd(){
 	my $self = shift;
@@ -528,7 +523,7 @@ sub writeHTMLEnd(){
 	$content =~ s/<meta http-equiv="refresh" content="10">//g;
 	$semaphore->down();
 	open($html, ">", $conf{'html_report'});
-	print $html $content . "\n<hr></body></html>";
+	print $html $content . "\n</body></html>";
 	close($html);
 	$semaphore->up();
 }
@@ -539,13 +534,8 @@ sub MoveReport(){
 	$url = &host($url);
 	$url .= ".html";
 	$msg =~ s/uniscan\.html/$url/g;
-	if($^O eq "MSWin32"){
-		system("move ". $conf{'html_report'} . " " . $msg);
-	}
-	else{
-		system("mv ". $conf{'html_report'} . " " . $msg);
-	}
-	&write(" ", "HTML report saved in: $msg");
+	system("mv ". $conf{'html_report'} . " " . $msg);
+	&write(" ", $conf{'lang94'} .": $msg");
 	&createHTMLRedirect($url);
 	
 }
@@ -567,11 +557,11 @@ sub update(){
 		#download and overwrite files
 		system("git clone git://git.code.sf.net/p/uniscan/code uniscan-code");
 		system("cp -R uniscan-code/* .; rm -rf uniscan-code/") if(-d "uniscan-code");
-		&write("", "| [*] Uniscan has updated to newest version");
+		&write("", "| [*] ". $conf{'lang95'});
 		exit();
 	}
 	else{
-		&write(" ", "Autoupdate not works on windows, disable the autoupdate in uniscan.conf\n");
+		&write(" ", $conf{'lang96'});
 		exit();
 	}
 }

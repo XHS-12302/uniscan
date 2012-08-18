@@ -2,8 +2,11 @@ package Plugins::Crawler::phpinfo;
 
 use Uniscan::Functions;
 use Thread::Semaphore;
-# this plug-in identify phpinfo() function on webpages
-
+use Uniscan::Configure;
+	
+my %conf = ( );
+my $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
+%conf = $cfg->loadconf();
 my $func = Uniscan::Functions->new();
 my $semaphore = Thread::Semaphore->new();
 our %pages : shared = ();
@@ -42,11 +45,12 @@ sub execute {
 
 sub showResults(){
 	my $self = shift;
-	$func->write("|\n| phpinfo() Disclosure:");
-	$func->writeHTMLItem("PHPinfo() Disclosure:<br>");
+	$func->write("|\n| ". $conf{'lang109'} .":");
+	$func->writeHTMLItem($conf{'lang109'} .":<br>");
 	foreach my $w (keys %pages){
-		$func->write("| [+] phpinfo() page: ". $w . " " . $pages{$w} . "x times") if($pages{$w});
-		$func->writeHTMLValue("phpinfo() page: ". $w) if($pages{$w});
+		$func->write("| [+] ". $conf{'lang110'} .": ". $w) if($pages{$w});
+		$func->writeHTMLValue($conf{'lang110'} .": ". $w) if($pages{$w});
+		$func->writeHTMLVul("PHPINFO") if($pages{$w});
 	}
 	$func->write("| \tSystem: ". $info{'System'}) if($info{'System'});
 	$func->writeHTMLValue("System: ". $info{'System'}) if($info{'System'});

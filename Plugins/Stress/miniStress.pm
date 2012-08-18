@@ -4,6 +4,12 @@ use Uniscan::Functions;
 use Thread::Queue;
 use threads;
 use Uniscan::Http;
+use Uniscan::Configure;
+	
+my %conf = ( );
+my $cfg = Uniscan::Configure->new(conffile => "uniscan.conf");
+%conf = $cfg->loadconf();
+
 
 my $func = Uniscan::Functions->new();
 my $q = new Thread::Queue;
@@ -23,17 +29,17 @@ sub execute(){
 	my ($self,@url) = @_;
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| Mini Stress Test:");
-	$func->writeHTMLItem("Mini Stress Test:<br>");
+	$func->write("| ". $conf{'lang114'} .":");
+	$func->writeHTMLItem($conf{'lang114'} .":<br>");
 	#aqui busca url mais custosa e retorna pra $url
 	$url = &cost(@url);
 	sleep(10);
-	$func->write("| Using $url as target");
-	$func->writeHTMLValue("Using $url as target");
+	$func->write("| ". $conf{'lang115'} ." $url ". $conf{'lang116'});
+	$func->writeHTMLValue($conf{'lang115'} . " $url " .$conf{'lang116'});
 	$time = time() + ($minuts * 60);
 	&threadnize("miniStress", $url);
-	$func->write("| Mini Stress Test End.". " "x30);
-	$func->writeHTMLValue("Mini Stress Test End.");
+	$func->write("| ".$conf{'lang117'}.".". " "x30);
+	$func->writeHTMLValue($conf{'lang117'});
 }
 
 
@@ -71,7 +77,7 @@ sub miniStress(){
 
 
 	while($q->pending > 0){
-		print "| [*]  Remaining time: ". ($time  - time())."s           \r";
+		print "| [*]  ". $conf{'lang121'} .": ". ($time  - time())."s           \r";
 		if(($time  - time()) < 1 ){
 			while($q->pending > 0){
 				$q->dequeue;
@@ -95,19 +101,19 @@ sub cost(){
     my $x = 0 ;
     my $y = scalar(@urls);
     my $http = Uniscan::Http->new();
-    $func->write("| Looking for best cost:");
-    $func->writeHTMLValue("Looking for best cost:");
+    $func->write("| ". $conf{'lang118'} .":");
+    $func->writeHTMLValue($conf{'lang118'} .":");
     foreach my $url (@urls){
 	$x++;
 	chomp $url;
-	print "| Looking[$x - $y]\r";
+	print "| ". $conf{'lang120'} ."[$x - $y]\r";
 	my $time1 = time();
 	my $ret = $http->GET($url);
 	my $time2 = time();
 	my $c = ($time2 - $time1);
 	if($c > $cost){
-	    $func->write("| Cost: [$c] $url");
-	    $func->writeHTMLValue("Cost: [$c] $url");
+	    $func->write("| ". $conf{'lang119'} .": [$c] $url");
+	    $func->writeHTMLValue($conf{'lang119'} .": [$c] $url");
 	    $cost = $c;
 	    $target = $url;
 	}

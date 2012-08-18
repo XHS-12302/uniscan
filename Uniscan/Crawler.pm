@@ -221,15 +221,13 @@
 		my $base = shift; 
 		if($base !~ /\/\/$/ && $base =~/https?:\/\//){
 			my @lst = ();
-			my @ERs = (	'href\s*=\s*"(.+?)"', 
-					'href\s*=\s*\'(.+?)\'', 
+			my @ERs = (	'href\s*=\s*"(.+?)"',
+					'href\s*=\s*\'(.+?)\'',
 					"location.href='(.+?)'",
 					"window\.open\('(.+?)'(,'')*\)",
-					"src *= *'(.+?)'",
-					"src *= *\"(.+?)\"",
-					"location.href=\"(.+?)\"", 
-					"<meta.*content=\"?.*;URL=(.+?)\"?.*?>",
-					"<meta.+content=\".+; url=(.+)\">"
+					'src\s*=\s*["\'](.+?)["\']',
+					'location.href\s*=\s*"(.+?)"', 
+					'<meta.+content=\"\d+;\s*URL=(.+?)\".*\/?>',
 				);
 					
 			my $h = Uniscan::Http->new();
@@ -316,26 +314,8 @@
 						$link =~s/&amp;/&/g;
 						$link =~ s/\.\///g; 
 						$link =~ s/ //g;
-						my $url_temp = &host($url);  
-						if($link =~/^https?:\/\// && $link =~/$url_temp/){
-							my $linktmp = $link;
-							my $urltmp = $url;
-							$urltmp =~ s/\/$//g;
-							if($linktmp =~ /^https/){
-								substr($urltmp,0,8) = "";
-								my $pos = index($linktmp, '/');
-								my $path = substr($linktmp, $pos, length($linktmp));
-								$link = $urltmp. $path;
-							}
-							elsif($linktmp =~ /^http/){
-								substr($linktmp,0,7) = "";
-								my $pos = index($linktmp, '/');
-								my $path = substr($linktmp, $pos, length($linktmp));
-								$link = $urltmp . $path;
-							}
-											   
-						}
-						if($link =~/^https?:\/\// && $link =~/^$url/ && $link !~/https\%3A\%2F\%2F|http\%3A\%2F\%2F|#|javascript:|mailto:|\{|\}|function\(|;/i){
+						my $url_temp = &host($url);
+						if($link =~/^https?:\/\// && $link =~/^$url/ && $link !~/#|javascript:|mailto:|\{|\}|function\(|;/i){
 							my $fil = $func->get_file($link);
 							my $ext = &get_extension($fil);	
 							if($conf{'extensions'} !~/\Q$ext\E/i){
@@ -409,7 +389,7 @@
 				}
 			}
 			$semaphore->down();
-			printf("\r| [*] Crawling: [%d - %d]\r", $reqs, $u);
+			printf("\r| [*] ". $conf{'lang28'} .": [%d - %d]\r", $reqs, $u);
 			$semaphore->up();
 		}
 		$q->enqueue(undef);
@@ -456,16 +436,16 @@
 		}
 	
 		if($reqs >= $conf{'max_reqs'}){
-			$func->write("| [+] Max Requests: " . $conf{'max_reqs'} . "             ");
-			$func->writeHTMLItem("Max Requests: ");
+			$func->write("| [+] ". $conf{'lang29'} .": " . $conf{'max_reqs'} . "             ");
+			$func->writeHTMLItem($conf{'lang29'} .": ");
 			$func->writeHTMLValue($conf{'max_reqs'});
 		}
 	
 		
 	# crawler end
 		
-		$func->write("| [+] Crawling finished, ". scalar(@list) ." URL's found!");
-		$func->writeHTMLItem("Crawling finished, found: ");
+		$func->write("| [+] ". $conf{'lang30'} .", ". scalar(@list) ." URL's ". $conf{'lang31'} ."!");
+		$func->writeHTMLItem($conf{'lang30'} .", ". $conf{'lang31'} .": ");
 		$func->writeHTMLValue(scalar(@list) . " URL's");
 	# show plugins results
 		foreach my $plug (@plugins){
@@ -473,8 +453,8 @@
 			$plug->clean()  if($plug->status() == 1);
 		}
 		if($conf{'show_ignored'} == 1){
-			$func->write("|\n| Ignored Files: ");
-			$func->writeHTMLItem("Ignored Files: <br>");
+			$func->write("|\n| ". $conf{'lang32'} .": ");
+			$func->writeHTMLItem($conf{'lang32'} .": <br>");
 			foreach my $key (keys %ignored){
 				if($key =~/[jpg|gif|bmp|jpeg|png|swf|js]$/i && $conf{'show_images'} == 1){
 					$func->write("| $key");
@@ -540,7 +520,32 @@
 	}
 	
 	
-	
+	sub CheckSitemap(){
+		my ($self, $url) = @_;
+		my $h = Uniscan::Http->new();
+		my @found = ();
+		my $content = $h->GET($url."sitemap.xml");
+		$content =~s/\n//g;
+		$content =~s/\r//g;
+		while($content =~ m/<loc>(.+?)<\/loc>/gi){
+			my $file = $1;
+			if($file =~ /^https?:\/\//){
+				my $ho = &host($url);
+				if($file =~ /$ho/i){
+					$func->write("| [+] ".$file);
+					$func->writeHTMLValue($file);
+					push @found, $file;
+				}
+			}
+			else{
+				$file = $url . $file;
+				$func->write("| [+] ".$file);
+				$func->writeHTMLValue($file);
+				push @found, $file;
+			}
+		}
+		return @found;
+	}
 	
 	
 	##############################################
@@ -586,7 +591,7 @@
 		foreach my $d (@plug){
 			$d =~ s/\.pm//g;
 			push(@plugins, Uniscan::Factory->create($d, "Crawler"));
-			$func->write("| Plugin name: $plugins[$x]->{name} v.$plugins[$x]->{version} Loaded.") if($plugins[$x]->status() == 1);
+			$func->write("| ". $conf{'lang33'} .": $plugins[$x]->{name} v.$plugins[$x]->{version} ". $conf{'lang34'} .".") if($plugins[$x]->status() == 1);
 			$x++;
 		}
 		

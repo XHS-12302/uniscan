@@ -25,8 +25,8 @@ sub execute(){
 	my ($self,@urls) = @_;
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| PHP CGI Argument Injection:");
-	$func->writeHTMLItem("PHP CGI Argument Injection:<br>");
+	$func->write("| ". $conf{'lang130'} .":");
+	$func->writeHTMLItem($conf{'lang130'} .":<br>");
 	@urls = $func->remove(@urls) if(scalar(@urls));
 	@urls = &generate(@urls);
 	CheckVulns(@urls);
@@ -78,11 +78,12 @@ sub GetResponse(){
 		my $url1 = $q->dequeue;
 		next if(not defined $url1);
 		next if($url1 =~/#/);
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 		my $response = $http->GET($url1);
 		if($response =~ /<code>.+\n<span style="color: #0000BB">/gi && $response =~ /&lt;\?/gi){
 			$func->write("| [+] Vul: $url1");
 			$func->writeHTMLValue("$url1");
+			$func->writeHTMLVul("PHPCGI");
 			push(@vulns, $url1);
 		}
 	}
@@ -104,7 +105,7 @@ sub GetResponse(){
 	sleep(2);
 	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ". $conf{'lang65'}.": ". $q->pending  ."       \r";
 	}
 	@threads = ();
 }

@@ -1,4 +1,17 @@
-Uniscan V6.1 date 27/07/2012
+Uniscan v6.2 date 18/08/2012
+
+- Improve HTTPS (SSL) requests.
+- Bugfix on crawler.
+- Bugfix on checkupdate() function to accept versions 6.2.001 .002 and etc.
+- uniscan_gui.pl rewritten.
+- Bugfix on Blind SQL Injection plug-in (less false-positive).
+- Bugfix on plug-in 9_directoryAdd.pm.
+- Add Multi-language support.
+- Added new feature: feeding the crawler with parsing the file sitemap.xml.
+- Added new feature: added index.php in report directory to show saved reports.
+
+
+Uniscan v6.1 date 27/07/2012
 
 - Added -w 4 on ping command of Server information module.
 - Small bugfix on crawler.

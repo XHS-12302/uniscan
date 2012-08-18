@@ -26,8 +26,8 @@ sub execute(){
 	our @RFI = ('http://uniscan.sourceforge.net/c.txt?');
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| Remote File Include:");
-	$func->writeHTMLItem("Remote File Include:<br>");
+	$func->write("| ".$conf{'lang143'}.":");
+	$func->writeHTMLItem($conf{'lang143'}.":<br>");
     &ScanRFICrawler(@urls);	
     &ScanRFICrawlerPost(@urls);
 }
@@ -64,6 +64,7 @@ my ($resp, $test) = 0;
 		if($resp =~/$conf{'rfi_return'}/){
 			$func->write("| [+] Vul [RFI] $test  ");
 			$func->writeHTMLValue($test);
+			$func->writeHTMLVul("RFI");
 		}
 		$resp = 0;
 	}
@@ -91,8 +92,9 @@ my ($resp, $test) = 0;
 		print "[*] Remaining tests: ". $q->pending  ."       \r";
 		$resp = $http->POST($url, $data);
 		if($resp =~/$conf{'rfi_return'}/){
-			$func->write("| [+] Vul [RFI] $url               \n| Post data: $data               ");
-			$func->writeHTMLValue($url."<br>Post data: $data");
+			$func->write("| [+] Vul [RFI] $url               \n| ".$conf{'lang129'}.": $data               ");
+			$func->writeHTMLValue($url."<br>".$conf{'lang129'}.": $data");
+			$func->writeHTMLVul("BSQL-I");
 		}
 		$resp = 0;
 	}

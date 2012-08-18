@@ -26,8 +26,8 @@ sub execute(){
 
 	$func->write("|"." "x99);
 	$func->write("|"." "x99);
-	$func->write("| RFI:");
-	$func->writeHTMLItem("Remote File Include:<br>");
+	$func->write("| ".$conf{'lang143'}.":");
+	$func->writeHTMLItem($conf{'lang143'} .":<br>");
     &ScanStaticRFI($url);
 	}
 
@@ -54,13 +54,14 @@ my ($resp, $test) = 0;
 	while($q->pending > 0){
 		$test = $q->dequeue;
 		next if(not defined $test);
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 		
 		$resp = $http->GET($test);
 		if($resp =~/$conf{'rfi_return'}/){
 			
 			$func->write("| [+] Vul [RFI] $test");
 			$func->writeHTMLValue($test);
+			$func->writeHTMLVul("RFI");
 		}
 		$resp = 0;
 	}
@@ -85,7 +86,7 @@ sub threadnize(){
 
 	foreach my $running (@threads) {
 		$running->join();
-		print "[*] Remaining tests: ". $q->pending  ."       \r";
+		print "[*] ".$conf{'lang65'}.": ". $q->pending  ."       \r";
 	}
 	@threads = ();
 
